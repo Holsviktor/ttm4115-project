@@ -6,6 +6,7 @@ import json
 import RPi.GPIO as GPIO
 import time
 import sys
+from MQTT_TOPICS import *
  
 
 # CONSTANS

@@ -5,6 +5,7 @@ from threading import Thread
 import json 
 import time
 from sense_hat import SenseHat
+from MQTT_TOPICS import *
 
 
 
