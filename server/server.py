@@ -1,8 +1,11 @@
 import paho.mqtt.client as mqtt 
 from threading import Thread 
 import logging
+from MQTT_TOPICS import *
 
  
+print(MQTT_TOPIC_SCOOTER_DRIVE)
+
 MQTT_BROKER = 'mqtt20.iik.ntnu.no' 
 MQTT_PORT = 1883 
 
