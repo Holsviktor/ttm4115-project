@@ -9,3 +9,6 @@ MQTT_TOPIC_CHARGER = '10/charger'
 # Scooter drive MQTT topics
 MQTT_TOPIC_SCOOTER_DRIVE = "10/scooter/drive_status"
 
+# Charger publish topics
+CHARGER_TOPIC_SENSED_MOVEMENT = "10/charger/movement"
+
