@@ -7,15 +7,9 @@ import RPi.GPIO as GPIO
 import time
 import sys
  
-MQTT_BROKER = 'mqtt20.iik.ntnu.no' 
-MQTT_PORT = 1883 
 
-MQTT_TOPIC_SCOOTER = '10/scooter' 
-MQTT_TOPIC_CHARGER = '10/charger'
-
-
+# CONSTANS
 PIN_MOTION = 13
-
 
 class ChargerLogic: 
 

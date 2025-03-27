@@ -6,15 +6,7 @@ import json
 import time
 from sense_hat import SenseHat
 
- 
-MQTT_BROKER = 'mqtt20.iik.ntnu.no' 
-MQTT_PORT = 1883 
 
-MQTT_TOPIC_SCOOTER = '10/scooter' 
-MQTT_TOPIC_CHARGER = '10/charger'
-
-
-PIN_MOTION = 13
 
 
 class ScooterLogic: 
@@ -103,14 +95,14 @@ class ScooterLogic:
             b, b, b, b, b, b, b, b,
             b, b, b, x, b, b, b, b
         ]
-
+ 
         # Display these colours on the LED matrix
         self.sense.set_pixels(creeper_pixels)
     
         answer = False
         
         while not answer:
-            for event in self.sense.stick.get_events():
+            for event in self.sense.stick.get _events():
                 if(event.direction == 'middle'):
                     answer = True
                     self.component.mqtt_client.publish(MQTT_TOPIC_CHARGER, '''{"msg": "yes_charge"}''') 
