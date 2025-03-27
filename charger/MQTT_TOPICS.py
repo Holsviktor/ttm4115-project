@@ -7,5 +7,5 @@ MQTT_TOPIC_SCOOTER = '10/scooter'
 MQTT_TOPIC_CHARGER = '10/charger'
 
 # Scooter drive MQTT topics
-MQTT_TOPIC_SCOOTER_DRIVE = 10/scooter/drive_status
+MQTT_TOPIC_SCOOTER_DRIVE = "10/scooter/drive_status"
 
