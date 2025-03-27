@@ -28,19 +28,22 @@ class ScooterLogic:
         self.sense = SenseHat()
         self.sense.clear()
 
-        #charger state machine transitions
+        #inital transition
         t0 = {"source": "initial", "target": "stopped"}
+
+        # TRANSITIONS
+        #charger transitions
         t1 = {"source": "stopped", "target": "respond_to_charge_request", "trigger": "would_you_like_to_charge"} 
         t2 = {"source": "respond_to_charge_request", "target": "final", "trigger": "5_percent", "effect": "show_5; say_goodbye"}
         t3 = {"source": "respond_to_charge_request", "target": "final", "trigger": "2_percent", "effect": "show_2; say_goodbye"}
         
         
-        # enctry action, waiting for joystick move
+        # STATES
         respond_to_charge_request = {"name": "respond_to_charge_request","entry": "contemplate_charging"}
 
 
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3], obj=self, states = [respond_to_charge_request]) 
-        self.component.stm_driver.add_machine(self.stm) 
+        self.component.stm_driver.add_machine(self.stm)
         
     def show_5(self):
         x = (0, 255, 0) # Green
@@ -103,7 +106,7 @@ class ScooterLogic:
 
         # Display these colours on the LED matrix
         self.sense.set_pixels(creeper_pixels)
-        
+    
         answer = False
         
         while not answer:

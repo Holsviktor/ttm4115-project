@@ -26,15 +26,18 @@ class ChargerLogic:
         self.name = name 
         self.component = component 
 
-        #charger state machine transitions
+        #TRANSITIONS
+        #inital transition
         t0 = {"source": "initial", "target": "searching"}
+
+        #charger transitions
         t1 = {"source": "searching", "target": "would_you_like_to_charge", "trigger": "found_scooter", "effect": "send_message_to_scooter"} 
         t2 = {"source": "would_you_like_to_charge", "target": "searching", "trigger": "t0", "effect": "give_discount_2"} 
         t3 = {"source": "would_you_like_to_charge", "target": "searching", "trigger": "yes_charge", "effect": "give_discount_5"} 
         t4 = {"source": "searching", "target": "final", "trigger":"terminate", "effect" : "say_goodbye"}
         
         
-        # entry actions
+        # STATES
         searching = {"name": "searching", "entry": "start_measurement"}
         would_you_like_to_charge = {"name": "would_you_like_to_charge", "entry": "start_timer('t0', '30000')", "exit": "stop_timer('t0')"}
         
