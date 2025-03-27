@@ -103,7 +103,7 @@ class ScooterLogic:
         answer = False
         
         while not answer:
-            for event in self.sense.stick.get _events():
+            for event in self.sense.stick.get_events():
                 if(event.direction == 'middle'):
                     answer = True
                     self.component.mqtt_client.publish(MQTT_TOPIC_CHARGER, '''{"msg": "yes_charge"}''') 
