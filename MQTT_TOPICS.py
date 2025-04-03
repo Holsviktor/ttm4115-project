@@ -11,7 +11,7 @@ MQTT_TOPIC_CHARGER = '10/charger'
 #
 
 # 1Hz
-MQTT_TOPIC_SCOOTER_DRIVE = "10/scooter/status"
+TOPIC_SCOOTER_STATUS = "10/scooter/status"
 
 # Charger publish topics
 TOPIC_MOVEMNT = "10/charger/movement"
