@@ -40,7 +40,8 @@ class ChargerLogic:
         trig_1Hz = {"source": "searching", "target" : "searching", "trigger": "timer_1Hz", "effect": "Hz_1_event"}
          
         # STATES
-        searching = {"name": "searching", "entry": "start_measurement", "entry": "start_timer('timer_1Hz', '1000')"}
+        searching = {"name": "searching", "entry": "start_measurement"}
+        #searching = {"name": "searching", "entry": "start_measurement", "entry": "start_timer('timer_1Hz', '1000')", "exit": "stop_timer('timer_1Hz')"}
         would_you_like_to_charge = {"name": "would_you_like_to_charge", "entry": "start_timer('t0', '30000')", "exit": "stop_timer('t0')"}
 
         
@@ -58,8 +59,9 @@ class ChargerLogic:
         # self.component.mqtt_client.publish(MQTT_TOPIC_CHARGER, '''{"msg": "turn_off"}''') 
                 
     def send_message_to_scooter(self):
+        self._logger.debug("send message scooter")
         # ask scooter if it needs to be charged
-        self.component.mqtt_client.publish(TOPIC_REQUEST_CHARGE, '''{"msg": ""}''') 
+        self.component.mqtt_client.publish(TOPIC_REQUEST_CHARGE, '''{"msg": "1"}''') 
         
     def give_discount_2(self):
         self.component.mqtt_client.publish(TOPIC_DISCOUNT, '''{"msg": "2%"}''') 
@@ -86,8 +88,10 @@ class ChargerLogic:
                     
         GPIO.cleanup()
         
+        self._logger.debug("CHARGER sensed movement")
         # notify yourself that you found a scooter to trigger a transition 
         self.component.mqtt_client.publish(TOPIC_MOVEMNT, '''{"msg": "found_scooter"}''') 
+        self.component.stm_driver.send("found_scooter", "charger1")
         
         
     def start_measurement(self):
@@ -118,7 +122,7 @@ class ChargerManager:
             self._logger.debug('"charger1" has registered scooter movement')
             self.stm_driver.send("found_scooter", "charger1") 
             
-        if command == "yes_charge":
+        if command == "yes":
             self._logger.debug('Scooter has confirmed charging')
             self.stm_driver.send("yes_charge", "charger1") 
             
