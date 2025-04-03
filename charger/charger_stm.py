@@ -31,10 +31,12 @@ class ChargerLogic:
         t3 = {"source": "would_you_like_to_charge", "target": "searching", "trigger": "yes_charge", "effect": "give_discount_5"} 
         t4 = {"source": "searching", "target": "final", "trigger":"terminate", "effect" : "say_goodbye"}
         
-        
+        trig_1Hz = {"source": "searching", "target" : "searching", "trigger": "timer_1Hz", "effect": "send_charger_status"}
+         
         # STATES
-        searching = {"name": "searching", "entry": "start_measurement"}
+        searching = {"name": "searching", "entry": "start_measurement", "entry": "start_timer('timer_1Hz', '1000')"}
         would_you_like_to_charge = {"name": "would_you_like_to_charge", "entry": "start_timer('t0', '30000')", "exit": "stop_timer('t0')"}
+
         
 
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4], obj=self, states = [searching, would_you_like_to_charge]) 
@@ -46,13 +48,13 @@ class ChargerLogic:
                 
     def send_message_to_scooter(self):
         # ask scooter if it needs to be charged
-        self.component.mqtt_client.publish(MQTT_TOPIC_SCOOTER, '''{"msg": "would_you_like_to_charge"}''') 
+        self.component.mqtt_client.publish(TOPIC_REQUEST_CHARGE, '''{"msg": ""}''') 
         
     def give_discount_2(self):
-        self.component.mqtt_client.publish(MQTT_TOPIC_SCOOTER, '''{"msg": "2_percent"}''') 
+        self.component.mqtt_client.publish(TOPIC_DISCOUNT, '''{"msg": "2%"}''') 
     
     def give_discount_5(self):
-        self.component.mqtt_client.publish(MQTT_TOPIC_SCOOTER, '''{"msg": "5_percent"}''') 
+        self.component.mqtt_client.publish(TOPIC_DISCOUNT, '''{"msg": "5%"}''') 
         
     def measure_distance(self):
 
@@ -74,7 +76,7 @@ class ChargerLogic:
         GPIO.cleanup()
         
         # notify yourself that you found a scooter to trigger a transition 
-        self.component.mqtt_client.publish(MQTT_TOPIC_CHARGER, '''{"msg": "found_scooter"}''') 
+        self.component.mqtt_client.publish(TOPIC_MOVEMNT, '''{"msg": "found_scooter"}''') 
         
         
     def start_measurement(self):
@@ -133,6 +135,9 @@ class ChargerManager:
 
         # subscribe to proper topic(s) of your choic 
         self.mqtt_client.subscribe(MQTT_TOPIC_CHARGER) 
+
+        self.mqtt_client.subscribe(TOPIC_REQUEST_CHARGE) 
+        self.mqtt_client.subscribe(TOPIC_RESPONSE_CHARGE) 
 
         # start the internal loop to process MQTT messages 
         self.mqtt_client.loop_start() 
