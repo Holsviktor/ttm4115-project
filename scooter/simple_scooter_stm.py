@@ -21,6 +21,11 @@ class ScooterLogic:
         self.sense = SenseHat()
         self.sense.clear()
 
+        self.latitude = 63.1
+        self.longitude = 10.1
+        self.is_in_use = False
+
+        self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
         #inital transition
         t0 = {"source": "initial", "target": "stopped"}
 
@@ -31,11 +36,14 @@ class ScooterLogic:
         t3 = {"source": "respond_to_charge_request", "target": "final", "trigger": "2_percent", "effect": "show_2; say_goodbye"}
         
         
+        # 1Hz event
+        trig_1Hz = {"source": "stopped", "target" : "stopped", "trigger": "timer_1Hz", "effect": "Hz_1_event"}
+
         # STATES
         respond_to_charge_request = {"name": "respond_to_charge_request","entry": "contemplate_charging"}
 
 
-        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3], obj=self, states = [respond_to_charge_request]) 
+        self.stm = stmpy.Machine(name=name, transitions = [trig_1Hz, t0, t1, t2, t3], obj=self, states = [respond_to_charge_request]) 
         self.component.stm_driver.add_machine(self.stm)
         
     def show_5(self):
@@ -119,7 +127,13 @@ class ScooterLogic:
                             
     def say_goodbye(self):
         self._logger.debug('"scooter1" STM is shutting down...')
-                
+
+    def Hz_1_event:
+        msg = status
+        
+
+        self._logger.debug("scooter 1Hz")
+        self.component.mqtt_client.publish(TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
 
 class ScooterManager: 
 
