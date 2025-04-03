@@ -25,7 +25,7 @@ class ChargerLogic:
         self.longitude = 10
 
         self.id = 0
-        self.isInUse = False
+        self.is_in_use = False
 
         #TRANSITIONS
         #inital transition
@@ -49,8 +49,10 @@ class ChargerLogic:
         self.component.stm_driver.add_machine(self.stm) 
     
     def Hz_1_event(self):
-        self._logger.debug("Charger 1H")
-        self.component.mqtt_client.publish(TOPIC_CHARGER_STATUS,'''{"latitude": "{}" "longitude": f"{self.longitude"}, "in_use": f"{self.in_use}""}'''.format(self.latitude) )
+        msg = {"latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
+        
+        self._logger.debug("Charger 1Hz")
+        self.component.mqtt_client.publish(TOPIC_CHARGER_STATUS, payload=json.dumps(msg))
     def say_goodbye(self):
         self._logger.debug('"charger1" STM is terminating...')
         # self.component.mqtt_client.publish(MQTT_TOPIC_CHARGER, '''{"msg": "turn_off"}''') 
