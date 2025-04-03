@@ -21,6 +21,12 @@ class ChargerLogic:
         self.name = name 
         self.component = component 
 
+        self.latitude = 63
+        self.longitude = 10
+
+        self.id = 0
+        self.isInUse = False
+
         #TRANSITIONS
         #inital transition
         t0 = {"source": "initial", "target": "searching"}
@@ -31,7 +37,7 @@ class ChargerLogic:
         t3 = {"source": "would_you_like_to_charge", "target": "searching", "trigger": "yes_charge", "effect": "give_discount_5"} 
         t4 = {"source": "searching", "target": "final", "trigger":"terminate", "effect" : "say_goodbye"}
         
-        trig_1Hz = {"source": "searching", "target" : "searching", "trigger": "timer_1Hz", "effect": "send_charger_status"}
+        trig_1Hz = {"source": "searching", "target" : "searching", "trigger": "timer_1Hz", "effect": "Hz_1_event"}
          
         # STATES
         searching = {"name": "searching", "entry": "start_measurement", "entry": "start_timer('timer_1Hz', '1000')"}
@@ -39,9 +45,12 @@ class ChargerLogic:
 
         
 
-        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4], obj=self, states = [searching, would_you_like_to_charge]) 
+        self.stm = stmpy.Machine(name=name, transitions = [trig_1Hz, t0, t1, t2, t3, t4], obj=self, states = [searching, would_you_like_to_charge]) 
         self.component.stm_driver.add_machine(self.stm) 
-        
+    
+    def Hz_1_event(self):
+        self._logger.debug("Charger 1H")
+        self.component.mqtt_client.publish(TOPIC_CHARGER_STATUS,'''{"latitude": "{}" "longitude": f"{self.longitude"}, "in_use": f"{self.in_use}""}'''.format(self.latitude) )
     def say_goodbye(self):
         self._logger.debug('"charger1" STM is terminating...')
         # self.component.mqtt_client.publish(MQTT_TOPIC_CHARGER, '''{"msg": "turn_off"}''') 
