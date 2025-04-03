@@ -40,10 +40,11 @@ class ScooterLogic:
         trig_1Hz = {"source": "stopped", "target" : "stopped", "trigger": "timer_1Hz", "effect": "Hz_1_event"}
 
         # STATES
+        stopped = {"name": "stopped", "entry": "start_timer('timer_1Hz', '1000')"}
         respond_to_charge_request = {"name": "respond_to_charge_request","entry": "contemplate_charging"}
 
 
-        self.stm = stmpy.Machine(name=name, transitions = [trig_1Hz, t0, t1, t2, t3], obj=self, states = [respond_to_charge_request]) 
+        self.stm = stmpy.Machine(name=name, transitions = [trig_1Hz, t0, t1, t2, t3], obj=self, states = [respond_to_charge_request, stopped]) 
         self.component.stm_driver.add_machine(self.stm)
         
     def show_5(self):
@@ -128,8 +129,8 @@ class ScooterLogic:
     def say_goodbye(self):
         self._logger.debug('"scooter1" STM is shutting down...')
 
-    def Hz_1_event:
-        msg = status
+    def Hz_1_event(self):
+        msg = self.status
         
 
         self._logger.debug("scooter 1Hz")
