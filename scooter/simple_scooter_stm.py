@@ -40,7 +40,7 @@ class ScooterLogic:
         trig_1Hz = {"source": "stopped", "target" : "stopped", "trigger": "timer_1Hz", "effect": "Hz_1_event"}
 
         # STATES
-        stopped = {"name": "stopped", "entry": "start_timer('timer_1Hz', '1000')"}
+        stopped = {"name": "stopped", "entry": "start_timer('timer_1Hz', '1000')", "exit": "stop_timer('timer_1Hz')"}
         respond_to_charge_request = {"name": "respond_to_charge_request","entry": "contemplate_charging"}
 
 
@@ -155,7 +155,8 @@ class ScooterManager:
         
                 
         # do stuff depending on what command you receive
-
+        self._logger.debug(f"Got topic: {topic} and msg: {msg}")
+        
         if topic == TOPIC_REQUEST_CHARGE:
             self._logger.debug('"scooter1" is prompted if it would like to be charged')
             self.stm_driver.send("would_you_like_to_charge", "scooter1")
@@ -173,11 +174,11 @@ class ScooterManager:
             self._logger.debug('"scooter1" is prompted if it would like to be charged')
             self.stm_driver.send("would_you_like_to_charge", "scooter1") 
             
-        if command == "5_percent":
+        if command == "5%":
             self._logger.debug(f'scooter1" received 5 percent discount')
             self.stm_driver.send("5_percent", "scooter1") 
             
-        if command == "2_percent":
+        if command == "2%":
             self._logger.debug(f'scooter1" received 2 percent discount')
             self.stm_driver.send("2_percent", "scooter1") 
             
@@ -207,7 +208,8 @@ class ScooterManager:
         self.mqtt_client.subscribe(MQTT_TOPIC_SCOOTER) 
 
         self.mqtt_client.subscribe(TOPIC_REQUEST_CHARGE) 
-        # self.mqtt_client.subscribe(TOPIC_RESPONSE_CHARGE) 
+        self.mqtt_client.subscribe(TOPIC_RESPONSE_CHARGE) 
+        self.mqtt_client.subscribe(TOPIC_MOVEMNT) 
 
         # start the internal loop to process MQTT messages 
         self.mqtt_client.loop_start() 
