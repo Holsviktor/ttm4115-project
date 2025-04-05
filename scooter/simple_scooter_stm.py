@@ -64,7 +64,7 @@ class ScooterLogic:
         
         #state_locked
         transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "response_unlock_request"}
-        transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_respond", "trigger": TRIGGER_REQUEST_CHARGE_FROM_CHARGER, "effect": "response_unlock_request"}
+        transition_go_to_respond_0 = {"source": "state_locked", "target": "state_respond", "trigger": TRIGGER_REQUEST_CHARGE_FROM_CHARGER, "effect": "response_unlock_request"}
         
         #state_enabled
         transition_go_to_locked = {"source": "state_enabled", "target": "state_locked", "trigger": REQUEST_LOCK}
@@ -87,7 +87,7 @@ class ScooterLogic:
         state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing", "exit": "state_chargeing_exit"}
         
 
-        transitions = [transition_inital, transition_go_to_charge, transition_go_to_locked, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_locked, transition_request_to_chargeing, transition_request_to_locked]
+        transitions = [transition_inital, transition_go_to_charge, transition_go_to_respond_0, transition_go_to_locked, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_locked, transition_request_to_chargeing, transition_request_to_locked]
 
         self.stm = stmpy.Machine(name=name, transitions = transitions, obj=self, states = [state_respond, state_enabled, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
