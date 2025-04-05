@@ -42,7 +42,7 @@ class ScooterLogic:
 
         # TRANSITIONS
         #charger transitions
-        t1 = {"source": "state_stopped", "target": "state_respond_to_charge_request", "trigger": "ask_scooter_charge"} 
+        #t1 = {"source": "state_stopped", "target": "state_respond_to_charge_request", "trigger": "ask_scooter_charge"} 
 
         #t2 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "5_percent", "effect": "helper_show_5; say_goodbye"}
         #t3 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "2_percent", "effect": "helper_show_2; say_goodbye"}
@@ -55,7 +55,6 @@ class ScooterLogic:
         
         
         # 1Hz event
-        # trig_1Hz = {"source": "state_stopped", "target" : "state_stopped", "trigger": "timer_1Hz", "effect": "Event_1Hz"}
 
         # STATES
         state_respond_to_charge_request = {"name": "state_respond_to_charge_request","entry": "state_respond_to_charge_request"}
@@ -65,7 +64,7 @@ class ScooterLogic:
         
 
 
-        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_chargeing, transition_request_to_locked, transition_go_to_enabled], obj=self, states = [state_respond_to_charge_request, state_stopped, state_enabled, state_locked, state_chargeing]) 
+        self.stm = stmpy.Machine(name=name, transitions = [t0, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_chargeing, transition_request_to_locked], obj=self, states = [state_respond_to_charge_request, state_enabled, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
 
         thread_1Hz = Thread(target=self.Event_1Hz)
