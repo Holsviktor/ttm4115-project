@@ -17,6 +17,10 @@ GO_TO_LOCKED = "go_to_locked"
 
 REQUEST_UNLOCK = "go_to_enabled"
 
+# States
+
+STATE_ENABLED = "state_enabled"
+
 class ScooterLogic: 
 
 
@@ -52,8 +56,8 @@ class ScooterLogic:
         #t2 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "5_percent", "effect": "helper_show_5; say_goodbye"}
         #t3 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "2_percent", "effect": "helper_show_2; say_goodbye"}
         
-        transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": ""}
-        transition_go_to_enabled_1 = {"source": "state_chargeing", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": ""}
+        transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "respond_unlock_request"}
+        transition_go_to_enabled_1 = {"source": "state_chargeing", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "respond_unlock_request"}
 
         transition_request_to_chargeing = {"source": "state_respond_to_charge_request", "target": "state_chargeing", "trigger": GO_TO_CHARGE, "effect": "helper_show_5; say_goodbye"}
         transition_request_to_locked = {"source": "state_respond_to_charge_request", "target": "state_locked", "trigger": GO_TO_LOCKED, "effect": "helper_show_2; say_goodbye"}
@@ -81,25 +85,43 @@ class ScooterLogic:
     def Event_1Hz(self):
 
         while 1:
+            self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
             msg = self.status
         
             time.sleep(1)
 
             self._logger.debug("scooter 1Hz")
             self.component.mqtt_client.publish(TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
+    
+    def response_unlock_request(self):
+        
+        self._logger.debug(f"{self.name}, response to unlock request")
+
+        if self.state == STATE_ENABLED:
+            msg = {"msg": 1}
+
+        else:
+            msg = {"msg": 0}
+        
+        self.component.mqtt_client.publish(TOPIC_RESPINSE_UNLOCK, payload=json.dumps(msg))
+        
+        
+
+        
 
 
     def state_locked(self): 
         self._logger.debug("Entered state locked - idle state")
 
         self.is_in_use = False
-        self.state = "locked"
+        self.state = "state_locked"
+    
     
     def state_enabled(self):
         self._logger.debug("Entered state enabled")
 
         self.is_in_use = True
-        self.state = "enabled"
+        self.state = "state_enabled"
 
         if not self.joystick_thread or not self.joystick_thread.is_alive():
             self.stop_joystick_thread = False
@@ -113,13 +135,17 @@ class ScooterLogic:
                 if event.action == 'pressed':
                     if event.direction == 'up':
                         SENSE_HAT_DEFINITIONS._display_arrow('up', self.sense)
+                        self.latitude += 0.01
                     elif event.direction == 'down':
                         SENSE_HAT_DEFINITIONS._display_arrow('down', self.sense)
+                        self.latitude -= 0.01
                     elif event.direction == 'left':
                         SENSE_HAT_DEFINITIONS._display_arrow('left', self.sense)
                     elif event.direction == 'right':
+                        self.longitude += 0.01
                         SENSE_HAT_DEFINITIONS._display_arrow('right', self.sense)
                     elif event.direction == 'middle':
+                        self.longitude -= 0.01
                         SENSE_HAT_DEFINITIONS._display_arrow('stop', self.sense)
 
         time.sleep(0.1) 

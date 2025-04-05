@@ -31,7 +31,7 @@ TOPIC_RESPONSE_CHARGE = "10/charger/response_charge" # msg filed: yes/no
 # 
 
 TOPIC_REQUEST_UNLOCK = "10/scooter/unlock/request"
-TOPIC_RESPINSE_UNLOCK = "10/scooter/unlock/response" 
+TOPIC_RESPINSE_UNLOCK = "10/scooter/unlock/response"  # 1 if success
 
 #
 # Server Topics
