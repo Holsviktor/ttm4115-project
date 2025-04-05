@@ -81,7 +81,7 @@ class ScooterLogic:
         
 
 
-        self.stm = stmpy.Machine(name=name, transitions = [transition_inital, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_locked, transition_request_to_chargeing, transition_request_to_locked], obj=self, states = [state_respond_to_charge_request, state_enabled, state_locked, state_chargeing]) 
+        self.stm = stmpy.Machine(name=name, transitions = [transition_inital, transition_go_to_locked, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_locked, transition_request_to_chargeing, transition_request_to_locked], obj=self, states = [state_respond_to_charge_request, state_enabled, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
 
         thread_1Hz = Thread(target=self.Event_1Hz)
