@@ -103,7 +103,7 @@ class ScooterLogic:
 
         if not self.joystick_thread or not self.joystick_thread.is_alive():
             self.stop_joystick_thread = False
-            self.joystick_thread = threading.Thread(target=self._handle_joystick_input)
+            self.joystick_thread = threading.Thread(target=SENSE_HAT_DEFINITIONS._handle_joystick_input(self))
             self.joystick_thread.daemon = True
             self.joystick_thread.start() 
 
