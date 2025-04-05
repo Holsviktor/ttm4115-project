@@ -96,16 +96,33 @@ class ScooterLogic:
         self.state = "locked"
     
     def state_enabled(self):
-        self._logger.debug("Entered state stopped")
+        self._logger.debug("Entered state enabled")
 
         self.is_in_use = True
         self.state = "enabled"
 
         if not self.joystick_thread or not self.joystick_thread.is_alive():
             self.stop_joystick_thread = False
-            self.joystick_thread = threading.Thread(target=SENSE_HAT_DEFINITIONS._handle_joystick_input(self))
+            self.joystick_thread = threading.Thread(target=self._handle_joystick_input(self))
             self.joystick_thread.daemon = True
-            self.joystick_thread.start() 
+            self.joystick_thread.start()
+
+    def _handle_joystick_input(self):
+        while not self.stop_joystick_thread:
+            for event in self.sense.stick.get_events():
+                if event.action == 'pressed':
+                    if event.direction == 'up':
+                        SENSE_HAT_DEFINITIONS._display_arrow('up')
+                    elif event.direction == 'down':
+                        SENSE_HAT_DEFINITIONS._display_arrow('down')
+                    elif event.direction == 'left':
+                        SENSE_HAT_DEFINITIONS._display_arrow('left')
+                    elif event.direction == 'right':
+                        SENSE_HAT_DEFINITIONS._display_arrow('right')
+                    elif event.direction == 'middle':
+                        SENSE_HAT_DEFINITIONS._display_arrow('stop')
+
+        time.sleep(0.1) 
 
     def state_enabled_exit(self):
         self._logger.debug("Exiting state enabled")

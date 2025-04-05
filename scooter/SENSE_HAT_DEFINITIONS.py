@@ -75,24 +75,9 @@ question_mark_pixels = [
 ]
 
 
-def _handle_joystick_input(self):
-    while not self.stop_joystick_thread:
-        for event in self.sense.stick.get_events():
-            if event.action == 'pressed':
-                if event.direction == 'up':
-                    self._display_arrow('up')
-                elif event.direction == 'down':
-                    self._display_arrow('down')
-                elif event.direction == 'left':
-                    self._display_arrow('left')
-                elif event.direction == 'right':
-                    self._display_arrow('right')
-                elif event.direction == 'middle':
-                    self._display_arrow('stop')
 
-        time.sleep(0.1)
 
-def _display_arrow(self, direction):
+def _display_arrow(direction, sense):
     arrows = {
         'up': [
             [0,0,0,0,1,0,0,0],
@@ -148,8 +133,8 @@ def _display_arrow(self, direction):
 
     arrow = arrows.get(direction, None)
     if arrow:
-        flat_pixels = [self._get_color(pixel) for row in arrow for pixel in row]
-        self.sense.set_pixels(flat_pixels)
+        flat_pixels = [_get_color(pixel) for row in arrow for pixel in row]
+        sense.set_pixels(flat_pixels)
 
 
 def _get_color(self, pixel_value):
