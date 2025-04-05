@@ -64,6 +64,7 @@ class ScooterLogic:
         
         #state_locked
         transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "response_unlock_request"}
+        transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_respond", "trigger": TRIGGER_REQUEST_CHARGE_FROM_CHARGER, "effect": "response_unlock_request"}
         
         #state_enabled
         transition_go_to_locked = {"source": "state_enabled", "target": "state_locked", "trigger": REQUEST_LOCK}
@@ -98,7 +99,7 @@ class ScooterLogic:
         thread_handle_joystick.start()
 
         thread_handle_charge = Thread()
-        thread_handle_charge.strat()
+        thread_handle_charge.start()
         
 
 
@@ -119,13 +120,13 @@ class ScooterLogic:
             time.sleep(1)
 
             if self.state == "state_enabled":
-                self.state_of_charge -= 0.1
+                self.state_of_charge -= 1
                 
                 if self.state_of_charge < 1.0:
                     self.component.stm_driver.send()
             
-            if self.state == "state_chargeging":
-                self.state_of_charge += 0.1
+            if self.state == "state_chargeing":
+                self.state_of_charge += 1
                 
                 if self.state_of_charge > 95:
                         self.component.stm_driver.send()
@@ -202,15 +203,15 @@ class ScooterLogic:
         self._logger.debug("State disabled and display cleared")
 
 
-    def state_chargeging(self):
+    def state_chargeing(self):
         self._logger.debug("Entered state chargeing")
-        self.state = "state_chargeging"
+        self.state = "state_chargeing"
 
         self.sense.set_pixels(SENSE_HAT_DEFINITIONS.lightning_bolt_pixels)
         
         self.is_in_use = False
     
-    def state_chargeging_exit(self):
+    def state_chargeing_exit(self):
         SENSE_HAT_DEFINITIONS.animate_unlocking(self.sense)
 
     def state_respond(self):
