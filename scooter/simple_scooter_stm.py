@@ -16,6 +16,7 @@ GO_TO_STOPPED = "go_to_stopped"
 GO_TO_LOCKED = "go_to_locked"
 
 REQUEST_UNLOCK = "go_to_enabled"
+
 class ScooterLogic: 
 
 
@@ -35,6 +36,9 @@ class ScooterLogic:
         self.state = ""
         self.is_in_use = False
         self.state_of_charge = 50
+
+        #thread
+        self.joystick_thread
 
         self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
         #inital transition
@@ -206,7 +210,7 @@ class ScooterManager:
 
         if topic == TOPIC_REQUEST_UNLOCK:
             self._logger.debug('Scooter1 is requested to unlock')
-            self.stm_driver.send("request_unlock", "scooter1")
+            self.stm_driver.send(REQUEST_UNLOCK, "scooter1")
         
         if topic == TOPIC_REQUEST_CHARGE:
             self._logger.debug('"scooter1" is prompted if it would like to be charged')
@@ -261,6 +265,7 @@ class ScooterManager:
         self.mqtt_client.subscribe(TOPIC_REQUEST_CHARGE) 
         self.mqtt_client.subscribe(TOPIC_RESPONSE_CHARGE) 
         self.mqtt_client.subscribe(TOPIC_MOVEMNT) 
+        self.mqtt_client.subscribe(TOPIC_REQUEST_UNLOCK) 
 
         # start the internal loop to process MQTT messages 
         self.mqtt_client.loop_start() 
