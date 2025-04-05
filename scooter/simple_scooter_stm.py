@@ -59,19 +59,21 @@ class ScooterLogic:
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, transition_request_to_chargeing, transition_request_to_locked, transition_request_to_stopped], obj=self, states = [state_respond_to_charge_request, state_stopped, state_driving, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
 
-        thread_1Hz = Thread.thread(target=self.Event_1Hz)
+        thread_1Hz = Thread(target=self.Event_1Hz)
         thread_1Hz.start()
         
 
 
 
     def Event_1Hz(self):
-        msg = self.status
-        
-        time.sleep(1)
 
-        self._logger.debug("scooter 1Hz")
-        self.component.mqtt_client.publish(TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
+        while 1:
+            msg = self.status
+        
+            time.sleep(1)
+
+            self._logger.debug("scooter 1Hz")
+            self.component.mqtt_client.publish(TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
 
 
     def state_locked(self): 
