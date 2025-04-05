@@ -22,6 +22,9 @@ REQUEST_LOCK = "go_to_locked"
 
 STATE_ENABLED = "state_enabled"
 
+#thread
+STOP_JOYSTICK = False
+
 class ScooterLogic: 
 
 
@@ -61,7 +64,7 @@ class ScooterLogic:
         transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "response_unlock_request"}
         
         #state_enabled
-        transition_go_to_locked = {"sourcer": "state_enabled", "targed": "state_locked", "trigger": REQUEST_LOCK}
+        transition_go_to_locked = {"source": "state_enabled", "target": "state_locked", "trigger": REQUEST_LOCK}
 
         #state_chargeing
         transition_go_to_enabled_1 = {"source": "state_chargeing", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "response_unlock_request"}
@@ -145,7 +148,7 @@ class ScooterLogic:
             self.joystick_thread.start()
 
     def _handle_joystick_input(self):
-        while not self.stop_joystick_thread:
+        while not STOP_JOYSTICK:
             for event in self.sense.stick.get_events():
                 if event.action == 'pressed':
                     if event.direction == 'up':
@@ -163,13 +166,15 @@ class ScooterLogic:
                         self.longitude -= 0.01
                         SENSE_HAT_DEFINITIONS._display_arrow('stop', self.sense)
 
-        time.sleep(0.1) 
+        threading.Event().wait(0.1)
+        self._logger.debug("Joystick thread is alive")
 
     def state_enabled_exit(self):
         self._logger.debug("Exiting state enabled")
 
+        self.stop_joystick_thread = True
         # Stop the joystick thread if it's running
-        if self.joystick_thread and self.joystick_thread.is_alive():
+        if STOP_JOYSTICK and self.joystick_thread.is_alive():
             self.stop_joystick_thread = True
             self.joystick_thread.join()
 
@@ -273,6 +278,7 @@ class ScooterManager:
         
         if topic == TOPIC_REQUEST_LOCK:
             self._logger.debug("Scooter1 is requested to lock")
+            STOP_JOYSTICK = True
             self.stm_driver.send(REQUEST_LOCK, "scooter1")
 
         if topic == TOPIC_REQUEST_CHARGE:
