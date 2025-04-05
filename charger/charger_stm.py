@@ -16,7 +16,7 @@ PIN_MOTION = 13
 
 TRIGGER_SCOOTER_DETECTED = "ask_if_scooter_wants_to_charge"
 
-TRIGGER_CHARGE_ACCEPTED = "chargeaccepted"
+TRIGGER_CHARGE_ACCEPTED = "charge_accepted"
 TRIGGER_CHARGE_DENIED = "charge_denied"
 
 
@@ -39,7 +39,7 @@ class ChargerLogic:
 
         #TRANSITIONS
         #inital transition
-        inital_transiton = {"source": "initial", "target": "state_wait"}
+        inital_transiton = {"source": "initial", "target": "state_searching"}
 
 
         # "function": self.give_discount_5
@@ -50,8 +50,8 @@ class ChargerLogic:
 
         #waiting transitions
         #timeout 
-        trans_waiting_timeout = {"source": "state_wait_for_scooter_charge_resposne", "target": "state_searching", "trigger": "ask_scooter_request_timer", "effect": "give_discount_2"} 
-        t3 = {"source": "state_wait_for_scooter_charge_resposne", "target": "state_chargeing", "trigger": TRIGGER_CHARGE_ACCEPTED, "effect": "give_discount_5"} 
+        trans_waiting_timeout = {"source": "state_wait", "target": "state_searching", "trigger": "ask_scooter_request_timer", "effect": "give_discount_2"} 
+        t3 = {"source": "state_wait", "target": "state_chargeing", "trigger": TRIGGER_CHARGE_ACCEPTED, "effect": "give_discount_5"} 
         
         #chargeing transitions
 
@@ -59,7 +59,7 @@ class ChargerLogic:
          
         # STATES
         state_searching = {"name": "state_searching", "entry": "state_searching"}
-        state_wait = {"name": "state_wait_for_scooter_charge_resposne", "entry": "state_wait", "exit": "state_wait_exit"}
+        state_wait = {"name": "state_wait", "entry": "state_wait", "exit": "stop_timer('charger_req_timeout')", "effect": "start_timer('charger_req_timeout', 3000)"}
         state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing", "exit": "state_chargeing_exit"}
 
         
@@ -81,7 +81,7 @@ class ChargerLogic:
         while 1:
 
             # runs in its own thread and sleeps one second 
-            time.sleep(1)
+            time.sleep(5)
 
             msg = {"latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use, "state": self.state}
             
@@ -89,13 +89,13 @@ class ChargerLogic:
             self.component.mqtt_client.publish(TOPIC_CHARGER_STATUS, payload=json.dumps(msg))
 
 
-    def start_chargeing(self):
+    def state_chargeing(self):
         self._logger.debug("CHARGER entered chargeing")
         self.state = "state_chargeing"
 
         self.is_in_use = True
 
-    def start_chargeing_exit(self):
+    def state_chargeing_exit(self):
         self._logger.debug("CHARGER left chargeing")
 
         self.is_in_use = False
@@ -104,10 +104,13 @@ class ChargerLogic:
         self._logger.debug("Charger neterted state waiting for scooter response")
         self.state = "state_wait"
 
+
         self.component.mqtt_client.publish(TOPIC_REQUEST_CHARGE, '''{"msg": "found_scooter"}''') 
 
     def state_wait_exit(self): 
         self._logger.debug("Charger leaving state wait for scooter charge response")
+
+        self.component.stm_driver.stop_timer("charger_req_timeout")
         
     def give_discount_2(self):
         self.component.mqtt_client.publish(TOPIC_DISCOUNT, '''{"msg": "2%"}''') 
@@ -130,11 +133,10 @@ class ChargerLogic:
         self._logger.debug("Charger entered state searching")
         self.state = "state_searching"
         
-        self.component.stm_driver.send(TRIGGER_SCOOTER_DETECTED, "charger1")
 
     def measure_distance(self):
 
-        while 0:
+        while 1:
             time.sleep(5)
             if self.state == "state_searching":
             
@@ -158,10 +160,9 @@ class ChargerLogic:
                
                 self._logger.debug("CHARGER sensed movement")
 
-                self.state = "finsihed_search"
 
                 # moves stm to waiting for scooter repsonse
-                # self.component.stm_driver.send(TRIGGER_SCOOTER_DETECTED, "charger1")
+                self.component.stm_driver.send(TRIGGER_SCOOTER_DETECTED, "charger1")
                 # notify yourself that you found a scooter to trigger a transition 
                 # self.component.mqtt_client.publish(TOPIC_MOVEMNT, '''{"msg": "found_scooter"}''') 
                
