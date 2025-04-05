@@ -47,7 +47,7 @@ class ScooterLogic:
         #t2 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "5_percent", "effect": "helper_show_5; say_goodbye"}
         #t3 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "2_percent", "effect": "helper_show_2; say_goodbye"}
         
-        transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "triiger": REQUEST_UNLOCK, "effect": ""}
+        transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": ""}
         transition_go_to_enabled_1 = {"source": "state_chargeing", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": ""}
 
         transition_request_to_chargeing = {"source": "state_respond_to_charge_request", "target": "state_chargeing", "trigger": GO_TO_CHARGE, "effect": "helper_show_5; say_goodbye"}
