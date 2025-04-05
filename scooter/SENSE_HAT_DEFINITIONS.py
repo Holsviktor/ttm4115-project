@@ -137,7 +137,7 @@ def _display_arrow(direction, sense):
         sense.set_pixels(flat_pixels)
 
 
-def _get_color(self, pixel_value):
+def _get_color(pixel_value):
     return G if pixel_value == 1 else O
 
 
