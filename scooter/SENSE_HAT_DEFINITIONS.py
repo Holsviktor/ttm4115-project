@@ -221,6 +221,5 @@ def animate_unlocking(sense):
 
     # Play animation
     for frame in frames:
-        flat_pixels = [_get_color(pixel) for pixel in frame]
-        sense.set_pixels(flat_pixels)
+        sense.set_pixels(frame)
         time.sleep(0.5)

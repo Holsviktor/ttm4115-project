@@ -271,9 +271,14 @@ class ScooterManager:
             self._logger.debug('Scooter1 is requested to unlock')
             self.stm_driver.send(REQUEST_UNLOCK, "scooter1")
         
+        if topic == TOPIC_REQUEST_LOCK:
+            self._logger.debug("Scooter1 is requested to lock")
+            self.stm_driver.send(REQUEST_LOCK, "scooter1")
+
         if topic == TOPIC_REQUEST_CHARGE:
             self._logger.debug('"scooter1" is prompted if it would like to be charged')
             self.stm_driver.send("ask_scooter_charge", "scooter1")
+
 
         if topic == TOPIC_DISCOUNT:
             if command == "2%":
