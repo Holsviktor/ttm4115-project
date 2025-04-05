@@ -121,7 +121,7 @@ class ScooterLogic:
     def state_locked(self): 
         self._logger.debug("Entered state locked - idle state")
 
-        SENSE_HAT_DEFINITIONS.display_padlock(self.sense)
+        self.sense.set_pixels(SENSE_HAT_DEFINITIONS.padlock_pixels)
 
         self.is_in_use = False
         self.state = "state_locked"

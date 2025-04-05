@@ -148,20 +148,17 @@ def stop(self):
     self.sense.clear()
 
     
-def display_padlock(sense):
-    padlock_pixels = [
-        O, O, O, O, G, G, O, O,
-        O, O, O, G, O, O, G, O,
-        O, O, G, O, O, O, O, G,
-        O, O, G, O, O, O, O, G,
-        O, O, G, O, O, O, O, G,
-        O, O, G, O, O, O, O, G,
-        O, G, G, G, G, G, G, G,
-        O, G, O, O, O, O, O, G,
-    ]
+padlock_pixels = [
+    O, O, O, O, G, G, O, O,
+    O, O, O, G, O, O, G, O,
+    O, O, G, O, O, O, O, G,
+    O, O, G, O, O, O, O, G,
+    O, O, G, O, O, O, O, G,
+    O, O, G, O, O, O, O, G,
+    O, G, G, G, G, G, G, G,
+    O, G, O, O, O, O, O, G,
+]
 
-    flat_pixels = [_get_color(pixel) for pixel in padlock_pixels]
-    sense.set_pixels(flat_pixels)
 
 def animate_unlocking(sense):
     frames = [
