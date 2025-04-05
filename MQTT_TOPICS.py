@@ -14,6 +14,8 @@ MQTT_TOPIC_CHARGER = '10/charger'
 TOPIC_SCOOTER_STATUS = "10/scooter/status"
 TOPIC_CHARGER_STATUS = "10/charger/status"
 
+#msg_status = {"name": , "latitude": , "longitude": , "in_use": , "state"}
+
 # Charger publish topics
 TOPIC_MOVEMNT = "10/charger/movement"
 
@@ -28,6 +30,8 @@ TOPIC_RESPONSE_CHARGE = "10/charger/response_charge" # msg filed: yes/no
 # Scooter Request
 # 
 
+TOPIC_REQUEST_UNLOCK = "10/scooter/unlock/request"
+TOPIC_RESPINSE_UNLOCK = "10/scooter/unlock/response" 
 
 #
 # Server Topics
