@@ -30,7 +30,7 @@ class ScooterLogic:
 
         self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
         #inital transition
-        t0 = {"source": "initial", "target": "state_locked", "effect": "init"}
+        t0 = {"source": "initial", "target": "state_locked"}
 
         # TRANSITIONS
         #charger transitions
@@ -58,6 +58,9 @@ class ScooterLogic:
 
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, transition_request_to_chargeing, transition_request_to_locked, transition_request_to_stopped], obj=self, states = [state_respond_to_charge_request, state_stopped, state_driving, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
+
+        thread_1Hz = Thread.thread(target=self.Event_1Hz)
+        thread_1Hz.start()
         
 
 
@@ -65,6 +68,7 @@ class ScooterLogic:
     def Event_1Hz(self):
         msg = self.status
         
+        time.sleep(1)
 
         self._logger.debug("scooter 1Hz")
         self.component.mqtt_client.publish(TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
