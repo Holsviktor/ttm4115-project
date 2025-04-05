@@ -124,7 +124,6 @@ class ScooterLogic:
         self._logger.debug('"scooter1" STM is shutting down...')
 
 
-    def thread_dr
     def thread_waiting_for_joystick_press_down(self):
  
         # Display these colours on the LED matrix
