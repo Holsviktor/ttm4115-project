@@ -103,7 +103,7 @@ class ScooterLogic:
 
         if not self.joystick_thread or not self.joystick_thread.is_alive():
             self.stop_joystick_thread = False
-            self.joystick_thread = threading.Thread(target=self._handle_joystick_input(self))
+            self.joystick_thread = threading.Thread(target=self._handle_joystick_input())
             self.joystick_thread.daemon = True
             self.joystick_thread.start()
 
@@ -112,15 +112,15 @@ class ScooterLogic:
             for event in self.sense.stick.get_events():
                 if event.action == 'pressed':
                     if event.direction == 'up':
-                        SENSE_HAT_DEFINITIONS._display_arrow('up')
+                        SENSE_HAT_DEFINITIONS._display_arrow('up', self.sense)
                     elif event.direction == 'down':
-                        SENSE_HAT_DEFINITIONS._display_arrow('down')
+                        SENSE_HAT_DEFINITIONS._display_arrow('down', self.sense)
                     elif event.direction == 'left':
-                        SENSE_HAT_DEFINITIONS._display_arrow('left')
+                        SENSE_HAT_DEFINITIONS._display_arrow('left', self.sense)
                     elif event.direction == 'right':
-                        SENSE_HAT_DEFINITIONS._display_arrow('right')
+                        SENSE_HAT_DEFINITIONS._display_arrow('right', self.sense)
                     elif event.direction == 'middle':
-                        SENSE_HAT_DEFINITIONS._display_arrow('stop')
+                        SENSE_HAT_DEFINITIONS._display_arrow('stop', self.sense)
 
         time.sleep(0.1) 
 
