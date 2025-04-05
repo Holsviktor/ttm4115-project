@@ -76,7 +76,7 @@ question_mark_pixels = [
 
 
 def _handle_joystick_input(self):
-    while not self.stop_thread:
+    while not self.stop_joystick_thread:
         for event in self.sense.stick.get_events():
             if event.action == 'pressed':
                 if event.direction == 'up':
@@ -157,7 +157,7 @@ def _get_color(self, pixel_value):
 
 
 def stop(self):
-    self.stop_thread = True
+    self.stop_joystick_thread = True
     if self.joystick_thread:
         self.joystick_thread.join()
     self.sense.clear()
