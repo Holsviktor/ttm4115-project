@@ -22,9 +22,12 @@ TOPIC_MOVEMNT = "10/charger/movement"
 #
 # Charger Request
 #
-
+#from charger
 TOPIC_REQUEST_CHARGE = "10/charger/request_charge" # msg filed
-TOPIC_RESPONSE_CHARGE = "10/charger/response_charge" # msg filed: yes/no
+#from scooter
+TOPIC_RESPONSE_CHARGE = "10/scooter/response_charge" # msg filed: yes/no
+
+TOPIC_END_CHARGE = "10/charger/end_charge"
 
 #
 # Scooter Request

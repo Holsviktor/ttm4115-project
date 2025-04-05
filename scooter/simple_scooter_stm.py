@@ -18,6 +18,8 @@ GO_TO_LOCKED = "go_to_locked"
 REQUEST_UNLOCK = "go_to_enabled"
 REQUEST_LOCK = "go_to_locked"
 
+TRIGGER_REQUEST_CHARGE_FROM_CHARGER = "TOPIC_REQUEST_CHARGE_FROM_CHARGER"
+
 # States
 
 STATE_ENABLED = "state_enabled"
@@ -49,7 +51,7 @@ class ScooterLogic:
         self.joystick_thread = None
         self.stop_joystick_thread = False
 
-        self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use, "state": self.state}
+        self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use, "state": self.state, "state_of_charge": self.state_of_charge}
         #inital transition
         transition_inital = {"source": "initial", "target": "state_locked"}
 
@@ -65,13 +67,14 @@ class ScooterLogic:
         
         #state_enabled
         transition_go_to_locked = {"source": "state_enabled", "target": "state_locked", "trigger": REQUEST_LOCK}
+        transition_go_to_charge = {"source": "state_enabled", "target": "state_respond_to_charge_request", "trigger": TRIGGER_REQUEST_CHARGE_FROM_CHARGER}
 
         #state_chargeing
         transition_go_to_enabled_1 = {"source": "state_chargeing", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "response_unlock_request"}
 
         #state_respond_to_charge_request
-        transition_request_to_chargeing = {"source": "state_respond_to_charge_request", "target": "state_chargeing", "trigger": GO_TO_CHARGE, "effect": "helper_show_5; say_goodbye"}
-        transition_request_to_locked = {"source": "state_respond_to_charge_request", "target": "state_locked", "trigger": GO_TO_LOCKED, "effect": "helper_show_2; say_goodbye"}
+        transition_request_to_chargeing = {"source": "state_respond_to_charge_request", "target": "state_chargeing", "trigger": GO_TO_CHARGE, "effect": "helper_show_5"}
+        transition_request_to_locked = {"source": "state_respond_to_charge_request", "target": "state_locked", "trigger": GO_TO_LOCKED, "effect": "helper_show_2; display_cross"}
         
         
         # 1Hz event
@@ -80,11 +83,12 @@ class ScooterLogic:
         state_respond_to_charge_request = {"name": "state_respond_to_charge_request","entry": "state_respond_to_charge_request"}
         state_enabled = {"name": "state_enabled", "entry": "state_enabled", "exit": "state_enabled_exit"}
         state_locked = {"name": "state_locked", "entry": "state_locked", "exit": "state_locked_exit"}
-        state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing", "exit": "stop_chargeing"}
+        state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing", "exit": "state_chargeing_exit"}
         
 
+        transitions = [transition_inital, transition_go_to_charge, transition_go_to_locked, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_locked, transition_request_to_chargeing, transition_request_to_locked]
 
-        self.stm = stmpy.Machine(name=name, transitions = [transition_inital, transition_go_to_locked, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_locked, transition_request_to_chargeing, transition_request_to_locked], obj=self, states = [state_respond_to_charge_request, state_enabled, state_locked, state_chargeing]) 
+        self.stm = stmpy.Machine(name=name, transitions = transitions, obj=self, states = [state_respond_to_charge_request, state_enabled, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
 
         thread_1Hz = Thread(target=self.Event_1Hz)
@@ -92,6 +96,9 @@ class ScooterLogic:
 
         thread_handle_joystick = Thread(target=self._handle_joystick_input)
         thread_handle_joystick.start()
+
+        thread_handle_charge = Thread()
+        thread_handle_charge.strat()
         
 
 
@@ -99,13 +106,30 @@ class ScooterLogic:
     def Event_1Hz(self):
 
         while 1:
-            self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use, "state": self.state}
+            self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use, "state": self.state, "state_of_charge": self.state_of_charge}
             msg = self.status
         
             time.sleep(1)
 
             self._logger.debug("scooter 1Hz")
             self.component.mqtt_client.publish(TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
+
+    def scooter_charge_handler(self):
+        while 1:
+            time.sleep(1)
+
+            if self.state == "state_enabled":
+                self.state_of_charge -= 0.1
+                
+                if self.state_of_charge < 1.0:
+                    self.component.stm_driver.send()
+            
+            if self.state == "state_chargeging":
+                self.state_of_charge += 0.1
+                
+                if self.state_of_charge > 95:
+                        self.component.stm_driver.send()
+
     
 
     
@@ -180,14 +204,15 @@ class ScooterLogic:
 
     def state_chargeging(self):
         self._logger.debug("Entered state chargeing")
+        self.state = "state_chargeging"
+
+        self.sense.set_pixels(SENSE_HAT_DEFINITIONS.lightning_bolt_pixels)
         
-        self.is_in_use = True
+        self.is_in_use = False
+    
+    def state_chargeging_exit(self):
+        SENSE_HAT_DEFINITIONS.animate_unlocking(self.sense)
 
-
-
-
-
-        
     def state_respond_to_charge_request(self):
 
         self._logger.debug("Scooter contemplate charging")
@@ -196,7 +221,9 @@ class ScooterLogic:
         thread = Thread(target=self.thread_waiting_for_joystick_press_down)
         thread.start()
                     
-                            
+    def display_cross(self):
+        self.sense.set_pixels(SENSE_HAT_DEFINITIONS.cross_pixels)
+    
     def say_goodbye(self):
         self._logger.debug('"scooter1" STM is shutting down...')
 
@@ -288,9 +315,9 @@ class ScooterManager:
                 self._logger.debug(f'scooter1" received 5 percent discount')
                 self.stm_driver.send("5_percent", "scooter1") 
  
-        if command == "ask_scooter_charge": 
+        if topic == TOPIC_REQUEST_CHARGE:
             self._logger.debug('"scooter1" is prompted if it would like to be charged')
-            self.stm_driver.send("ask_scooter_charge", "scooter1") 
+            self.stm_driver.send(TRIGGER_REQUEST_CHARGE_FROM_CHARGER, "scooter1") 
             
         if command == "5%":
             self._logger.debug(f'scooter1" received 5 percent discount')
