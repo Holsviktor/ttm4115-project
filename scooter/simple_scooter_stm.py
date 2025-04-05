@@ -89,6 +89,9 @@ class ScooterLogic:
 
         thread_1Hz = Thread(target=self.Event_1Hz)
         thread_1Hz.start()
+
+        thread_handle_joystick = Thread(target=self._handle_joystick_input)
+        thread_handle_joystick.start()
         
 
 
@@ -103,6 +106,8 @@ class ScooterLogic:
 
             self._logger.debug("scooter 1Hz")
             self.component.mqtt_client.publish(TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
+    
+
     
     def response_unlock_request(self):
         
@@ -135,48 +140,37 @@ class ScooterLogic:
         SENSE_HAT_DEFINITIONS.animate_unlocking(self.sense)
     
     
+    # Joystick input is handled in its own thread to not mess up the stm
     def state_enabled(self):
         self._logger.debug("Entered state enabled")
 
         self.is_in_use = True
         self.state = "state_enabled"
 
-        if not self.joystick_thread or not self.joystick_thread.is_alive():
-            self.stop_joystick_thread = False
-            self.joystick_thread = threading.Thread(target=self._handle_joystick_input())
-            self.joystick_thread.daemon = True
-            self.joystick_thread.start()
-
     def _handle_joystick_input(self):
-        while not STOP_JOYSTICK:
-            for event in self.sense.stick.get_events():
-                if event.action == 'pressed':
-                    if event.direction == 'up':
-                        SENSE_HAT_DEFINITIONS._display_arrow('up', self.sense)
-                        self.latitude += 0.01
-                    elif event.direction == 'down':
-                        SENSE_HAT_DEFINITIONS._display_arrow('down', self.sense)
-                        self.latitude -= 0.01
-                    elif event.direction == 'left':
-                        SENSE_HAT_DEFINITIONS._display_arrow('left', self.sense)
-                    elif event.direction == 'right':
-                        self.longitude += 0.01
-                        SENSE_HAT_DEFINITIONS._display_arrow('right', self.sense)
-                    elif event.direction == 'middle':
-                        self.longitude -= 0.01
-                        SENSE_HAT_DEFINITIONS._display_arrow('stop', self.sense)
-
-        threading.Event().wait(0.1)
-        self._logger.debug("Joystick thread is alive")
+        while 1:
+            if self.state != "state_enabled":
+                time.sleep(3)
+            else:
+                for event in self.sense.stick.get_events():
+                    if event.action == 'pressed':
+                        if event.direction == 'up':
+                            SENSE_HAT_DEFINITIONS._display_arrow('up', self.sense)
+                            self.latitude += 0.01
+                        elif event.direction == 'down':
+                            SENSE_HAT_DEFINITIONS._display_arrow('down', self.sense)
+                            self.latitude -= 0.01
+                        elif event.direction == 'left':
+                            SENSE_HAT_DEFINITIONS._display_arrow('left', self.sense)
+                        elif event.direction == 'right':
+                            self.longitude += 0.01
+                            SENSE_HAT_DEFINITIONS._display_arrow('right', self.sense)
+                        elif event.direction == 'middle':
+                            self.longitude -= 0.01
+                            SENSE_HAT_DEFINITIONS._display_arrow('stop', self.sense)
 
     def state_enabled_exit(self):
         self._logger.debug("Exiting state enabled")
-
-        self.stop_joystick_thread = True
-        # Stop the joystick thread if it's running
-        if STOP_JOYSTICK and self.joystick_thread.is_alive():
-            self.stop_joystick_thread = True
-            self.joystick_thread.join()
 
         # Clear the display
         self.sense.clear()
@@ -278,7 +272,6 @@ class ScooterManager:
         
         if topic == TOPIC_REQUEST_LOCK:
             self._logger.debug("Scooter1 is requested to lock")
-            STOP_JOYSTICK = True
             self.stm_driver.send(REQUEST_LOCK, "scooter1")
 
         if topic == TOPIC_REQUEST_CHARGE:
