@@ -57,30 +57,31 @@ class ScooterLogic:
 
         # TRANSITIONS
         #charger transitions
-        #t1 = {"source": "state_stopped", "target": "state_respond_to_charge_request", "trigger": "ask_scooter_charge"} 
+        #t1 = {"source": "state_stopped", "target": "state_respond", "trigger": "ask_scooter_charge"} 
 
-        #t2 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "5_percent", "effect": "helper_show_5; say_goodbye"}
-        #t3 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "2_percent", "effect": "helper_show_2; say_goodbye"}
+        #t2 = {"source": "state_respond", "target": "stopped", "trigger": "5_percent", "effect": "helper_show_5; say_goodbye"}
+        #t3 = {"source": "state_respond", "target": "stopped", "trigger": "2_percent", "effect": "helper_show_2; say_goodbye"}
         
         #state_locked
         transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "response_unlock_request"}
+        transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_respond", "trigger": TRIGGER_REQUEST_CHARGE_FROM_CHARGER, "effect": "response_unlock_request"}
         
         #state_enabled
         transition_go_to_locked = {"source": "state_enabled", "target": "state_locked", "trigger": REQUEST_LOCK}
-        transition_go_to_charge = {"source": "state_enabled", "target": "state_respond_to_charge_request", "trigger": TRIGGER_REQUEST_CHARGE_FROM_CHARGER}
+        transition_go_to_charge = {"source": "state_enabled", "target": "state_respond", "trigger": TRIGGER_REQUEST_CHARGE_FROM_CHARGER}
 
         #state_chargeing
         transition_go_to_enabled_1 = {"source": "state_chargeing", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "response_unlock_request"}
 
-        #state_respond_to_charge_request
-        transition_request_to_chargeing = {"source": "state_respond_to_charge_request", "target": "state_chargeing", "trigger": GO_TO_CHARGE, "effect": "helper_show_5"}
-        transition_request_to_locked = {"source": "state_respond_to_charge_request", "target": "state_locked", "trigger": GO_TO_LOCKED, "effect": "helper_show_2; display_cross"}
+        #state_respond
+        transition_request_to_chargeing = {"source": "state_respond", "target": "state_chargeing", "trigger": GO_TO_CHARGE, "effect": "helper_show_5"}
+        transition_request_to_locked = {"source": "state_respond", "target": "state_locked", "trigger": GO_TO_LOCKED, "effect": "helper_show_2; display_cross"}
         
         
         # 1Hz event
 
         # STATES
-        state_respond_to_charge_request = {"name": "state_respond_to_charge_request","entry": "state_respond_to_charge_request"}
+        state_respond = {"name": "state_respond","entry": "state_respond"}
         state_enabled = {"name": "state_enabled", "entry": "state_enabled", "exit": "state_enabled_exit"}
         state_locked = {"name": "state_locked", "entry": "state_locked", "exit": "state_locked_exit"}
         state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing", "exit": "state_chargeing_exit"}
@@ -88,7 +89,7 @@ class ScooterLogic:
 
         transitions = [transition_inital, transition_go_to_charge, transition_go_to_locked, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_locked, transition_request_to_chargeing, transition_request_to_locked]
 
-        self.stm = stmpy.Machine(name=name, transitions = transitions, obj=self, states = [state_respond_to_charge_request, state_enabled, state_locked, state_chargeing]) 
+        self.stm = stmpy.Machine(name=name, transitions = transitions, obj=self, states = [state_respond, state_enabled, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
 
         thread_1Hz = Thread(target=self.Event_1Hz)
@@ -98,7 +99,7 @@ class ScooterLogic:
         thread_handle_joystick.start()
 
         thread_handle_charge = Thread()
-        thread_handle_charge.strat()
+        thread_handle_charge.start()
         
 
 
@@ -119,13 +120,13 @@ class ScooterLogic:
             time.sleep(1)
 
             if self.state == "state_enabled":
-                self.state_of_charge -= 0.1
+                self.state_of_charge -= 1
                 
                 if self.state_of_charge < 1.0:
                     self.component.stm_driver.send()
             
-            if self.state == "state_chargeging":
-                self.state_of_charge += 0.1
+            if self.state == "state_chargeing":
+                self.state_of_charge += 1
                 
                 if self.state_of_charge > 95:
                         self.component.stm_driver.send()
@@ -202,18 +203,18 @@ class ScooterLogic:
         self._logger.debug("State disabled and display cleared")
 
 
-    def state_chargeging(self):
+    def state_chargeing(self):
         self._logger.debug("Entered state chargeing")
-        self.state = "state_chargeging"
+        self.state = "state_chargeing"
 
         self.sense.set_pixels(SENSE_HAT_DEFINITIONS.lightning_bolt_pixels)
         
         self.is_in_use = False
     
-    def state_chargeging_exit(self):
+    def state_chargeing_exit(self):
         SENSE_HAT_DEFINITIONS.animate_unlocking(self.sense)
 
-    def state_respond_to_charge_request(self):
+    def state_respond(self):
 
         self._logger.debug("Scooter contemplate charging")
         
