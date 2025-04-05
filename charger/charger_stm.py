@@ -35,17 +35,17 @@ class ChargerLogic:
 
         self.id = name
         self.is_in_use = False
-        self.state = "state_searching"
+        self.state = "init"
 
         #TRANSITIONS
         #inital transition
-        inital_transiton = {"source": "initial", "target": "state_searching"}
+        inital_transiton = {"source": "initial", "target": "state_wait"}
 
 
         # "function": self.give_discount_5
         
         #searching transitions
-        t1 = {"source": "state_searching", "target": "state_wait_for_scooter_charge_response", "trigger": TRIGGER_SCOOTER_DETECTED} 
+        t1 = {"source": "state_searching", "target": "state_wait", "trigger": TRIGGER_SCOOTER_DETECTED} 
         #t4 = {"source": "state_searching", "target": "final", "trigger":"terminate", "effect" : "say_goodbye"}
 
         #waiting transitions
@@ -59,12 +59,12 @@ class ChargerLogic:
          
         # STATES
         state_searching = {"name": "state_searching", "entry": "state_searching"}
-        state_wait_for_scooter_charge_resposne = {"name": "state_wait_for_scooter_charge_resposne", "entry": "state_wait_for_scooter_charge_response", "exit": "stop_timer('ask_scooter_request_timer')", "effect": "start_timer('ask_scooter_request_timer', '30000')"}
+        state_wait = {"name": "state_wait_for_scooter_charge_resposne", "entry": "state_wait", "exit": "state_wait_exit"}
         state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing", "exit": "state_chargeing_exit"}
 
         
 
-        self.stm = stmpy.Machine(name=name, transitions = [inital_transiton, t1, trans_waiting_timeout, t3], obj=self, states = [state_searching, state_wait_for_scooter_charge_resposne, state_chargeing]) 
+        self.stm = stmpy.Machine(name=name, transitions = [inital_transiton, t1, trans_waiting_timeout, t3], obj=self, states = [state_searching, state_wait, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm) 
 
         thread_1Hz = Thread(target=self.Event_1Hz)
@@ -100,14 +100,14 @@ class ChargerLogic:
 
         self.is_in_use = False
     
-    def state_wait_for_scooter_charge_response(self):
+    def state_wait(self):
         self._logger.debug("Charger neterted state waiting for scooter response")
-        self.state = "state_wait_for_scooter_charge_response"
+        self.state = "state_wait"
 
         self.component.mqtt_client.publish(TOPIC_REQUEST_CHARGE, '''{"msg": "found_scooter"}''') 
 
-    #def state_wait_for_scooter_charge_response_exit(self): 
-    #    self._logger.debug("Charger leaving state wait for scooter charge response")
+    def state_wait_exit(self): 
+        self._logger.debug("Charger leaving state wait for scooter charge response")
         
     def give_discount_2(self):
         self.component.mqtt_client.publish(TOPIC_DISCOUNT, '''{"msg": "2%"}''') 
@@ -129,34 +129,39 @@ class ChargerLogic:
     def state_searching(self):
         self._logger.debug("Charger entered state searching")
         self.state = "state_searching"
+        
+        self.component.stm_driver.send(TRIGGER_SCOOTER_DETECTED, "charger1")
 
     def measure_distance(self):
 
-        while 1:
+        while 0:
             time.sleep(5)
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setwarnings(False)
-
-            #Config Pins
-            #Input
-            GPIO.setup(PIN_MOTION, GPIO.IN)
-
-            scooter_found = False
-            
-           
             if self.state == "state_searching":
+            
+                GPIO.setmode(GPIO.BCM)
+                GPIO.setwarnings(False)
+
+                #Config Pins
+                #Input
+                GPIO.setup(PIN_MOTION, GPIO.IN)
+
+                scooter_found = False
+                
+               
                 self._logger.debug('"charger1" searches for scooter movement...')
                 while(not scooter_found):
                     if GPIO.input(PIN_MOTION):
                         scooter_found = True
-                        
-            GPIO.cleanup()
-            
-            if self.state == "state_searching":
+                            
+                GPIO.cleanup()
+                
+               
                 self._logger.debug("CHARGER sensed movement")
 
+                self.state = "finsihed_search"
+
                 # moves stm to waiting for scooter repsonse
-                self.component.stm_driver.send(TRIGGER_SCOOTER_DETECTED, "charger1")
+                # self.component.stm_driver.send(TRIGGER_SCOOTER_DETECTED, "charger1")
                 # notify yourself that you found a scooter to trigger a transition 
                 # self.component.mqtt_client.publish(TOPIC_MOVEMNT, '''{"msg": "found_scooter"}''') 
                
