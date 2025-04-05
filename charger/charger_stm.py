@@ -24,36 +24,43 @@ class ChargerLogic:
         self.latitude = 63
         self.longitude = 10
 
-        self.id = 0
+        self.id = name
         self.is_in_use = False
 
         #TRANSITIONS
         #inital transition
-        t0 = {"source": "initial", "target": "searching"}
+        ask_scooter_request_timer = {"source": "initial", "target": "state_searching", "effect": "init"}
 
+
+        # "function": self.give_discount_5
         #charger transitions
-        t1 = {"source": "searching", "target": "would_you_like_to_charge", "trigger": "found_scooter", "effect": "send_message_to_scooter"} 
-        t2 = {"source": "would_you_like_to_charge", "target": "searching", "trigger": "t0", "effect": "give_discount_2"} 
-        t3 = {"source": "would_you_like_to_charge", "target": "searching", "trigger": "yes_charge", "effect": "give_discount_5"} 
-        t4 = {"source": "searching", "target": "final", "trigger":"terminate", "effect" : "say_goodbye"}
+        t1 = {"source": "state_searching", "target": "ask_scooter_charge", "trigger": "found_scooter", "effect": "send_message_to_scooter"} 
+        t2 = {"source": "ask_scooter_charge", "target": "state_searching", "trigger": "ask_scooter_request_timer", "effect": "give_discount_2"} 
+        t3 = {"source": "ask_scooter_charge", "target": "state_searching", "trigger": "yes_charge", "effect": "give_discount_5"} 
+        t4 = {"source": "state_searching", "target": "final", "trigger":"terminate", "effect" : "say_goodbye"}
         
-        trig_1Hz = {"source": "searching", "target" : "searching", "trigger": "timer_1Hz", "effect": "Hz_1_event"}
+        # trig_1Hz = {"source": "state_searching", "target" : "state_searching", "trigger": "timer_1Hz", "effect": "Event_1Hz"}
          
         # STATES
-        searching = {"name": "searching", "entry": "start_measurement"}
-        #searching = {"name": "searching", "entry": "start_measurement", "entry": "start_timer('timer_1Hz', '1000')", "exit": "stop_timer('timer_1Hz')"}
-        would_you_like_to_charge = {"name": "would_you_like_to_charge", "entry": "start_timer('t0', '30000')", "exit": "stop_timer('t0')"}
+        state_searching = {"name": "state_searching", "entry": "start_measurement"}
+        ask_scooter_charge = {"name": "ask_scooter_charge", "entry": "start_timer('ask_scooter_request_timer', '30000')", "exit": "stop_timer('ask_scooter_request_timer')"}
+        state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing", "exit": "stop_chargeing"}
 
         
 
-        self.stm = stmpy.Machine(name=name, transitions = [trig_1Hz, t0, t1, t2, t3, t4], obj=self, states = [searching, would_you_like_to_charge]) 
+        self.stm = stmpy.Machine(name=name, transitions = [ask_scooter_request_timer, t1, t2, t3, t4], obj=self, states = [state_searching, ask_scooter_charge, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm) 
     
-    def Hz_1_event(self):
+    def Event_1Hz(self):
+
+        # runs in its own thread and sleeps one second 
+        time.sleep(1)
+
         msg = {"latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
         
         self._logger.debug("Charger 1Hz")
         self.component.mqtt_client.publish(TOPIC_CHARGER_STATUS, payload=json.dumps(msg))
+
     def say_goodbye(self):
         self._logger.debug('"charger1" STM is terminating...')
         # self.component.mqtt_client.publish(MQTT_TOPIC_CHARGER, '''{"msg": "turn_off"}''') 
@@ -93,11 +100,27 @@ class ChargerLogic:
         self.component.mqtt_client.publish(TOPIC_MOVEMNT, '''{"msg": "found_scooter"}''') 
         self.component.stm_driver.send("found_scooter", "charger1")
         
-        
+
+    def start_chargeing(self):
+        self._logger.debug("CHARGER entered chargeing")
+
+        self.is_in_use = True
+
+    def start_chargeing(self):
+        self._loffer.debug("CHARGER left chargeing")
+
+        self.is_in_use = False
+
+
     def start_measurement(self):
-        # trying to make searching non-blocking
+        # trying to make state_searching non-blocking
         thread = Thread(target=self.measure_distance)
         thread.start()
+
+    def init(self):
+        thread = Thread(target=self.Event_1Hz)
+        thread.start()
+    
 
 class ChargerManager: 
 

@@ -6,9 +6,12 @@ import json
 import time
 from sense_hat import SenseHat
 from MQTT_TOPICS import *
+import SENSE_HAT_DEFINITIONS
 
 
-
+GO_TO_CHARGE = "go_to_charge"
+GO_TO_STOPPED = "go_to_stopped" 
+GO_TO_LOCKED = "go_to_locked"
 
 class ScooterLogic: 
 
@@ -27,115 +30,145 @@ class ScooterLogic:
 
         self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
         #inital transition
-        t0 = {"source": "initial", "target": "stopped"}
+        t0 = {"source": "initial", "target": "state_locked", "effect": "init"}
 
         # TRANSITIONS
         #charger transitions
-        t1 = {"source": "stopped", "target": "respond_to_charge_request", "trigger": "would_you_like_to_charge"} 
-        t2 = {"source": "respond_to_charge_request", "target": "final", "trigger": "5_percent", "effect": "show_5; say_goodbye"}
-        t3 = {"source": "respond_to_charge_request", "target": "final", "trigger": "2_percent", "effect": "show_2; say_goodbye"}
+        t1 = {"source": "state_stopped", "target": "state_respond_to_charge_request", "trigger": "ask_scooter_charge"} 
+
+        t2 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "5_percent", "effect": "helper_show_5; say_goodbye"}
+        t3 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "2_percent", "effect": "helper_show_2; say_goodbye"}
+
+        transition_request_to_chargeing = {"source": "state_respond_to_charge_request", "target": "state_chargeing", "trigger": GO_TO_CHARGE, "effect": "helper_show_5; say_goodbye"}
+        transition_request_to_stopped = {"source": "state_respond_to_charge_request", "target": "state_stopped", "trigger": GO_TO_STOPPED, "effect": "helper_show_2; say_goodbye"}
+        transition_request_to_locked = {"source": "state_respond_to_charge_request", "target": "state_locked", "trigger": GO_TO_LOCKED, "effect": "helper_show_2; say_goodbye"}
         
         
         # 1Hz event
-        trig_1Hz = {"source": "stopped", "target" : "stopped", "trigger": "timer_1Hz", "effect": "Hz_1_event"}
+        # trig_1Hz = {"source": "state_stopped", "target" : "state_stopped", "trigger": "timer_1Hz", "effect": "Event_1Hz"}
 
         # STATES
-        stopped = {"name": "stopped", "entry": "start_timer('timer_1Hz', '1000')", "exit": "stop_timer('timer_1Hz')"}
-        respond_to_charge_request = {"name": "respond_to_charge_request","entry": "contemplate_charging"}
+        state_stopped = {"name": "state_stopped", "entry": "state_stopped", "exit": "" }
+        state_respond_to_charge_request = {"name": "state_respond_to_charge_request","entry": "state_respond_to_charge_request"}
+        state_driving = {"name": "state_driving", "entry": "state_driving", "exit": ""}
+        state_locked = {"name": "state_locked", "entry": "state_locked", "exit": ""}
+        state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing"}
+        
 
 
-        self.stm = stmpy.Machine(name=name, transitions = [trig_1Hz, t0, t1, t2, t3], obj=self, states = [respond_to_charge_request, stopped]) 
+        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, transition_request_to_chargeing, transition_request_to_locked, transition_request_to_stopped], obj=self, states = [state_respond_to_charge_request, state_stopped, state_driving, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
         
-    def show_5(self):
-        x = (0, 255, 0) # Green
-        b = (0, 0, 0) # Off
-        
-        
-        # Set up where each colour will display
-        creeper_pixels = [
-            b, b, x, x, x, x, b, b,
-            b, b, x, b, b, b, b, b,
-            b, b, x, b, b, b, b, b,
-            b, b, x, x, x, b, b, b,
-            b, b, b, b, b, x, b, b,
-            b, b, b, b, b, x, b, b,
-            b, b, b, b, b, x, b, b,
-            b, b, x, x, x, b, b, b
-        ]
-        self.sense.set_pixels(creeper_pixels)
-        time.sleep(2)
-        self.sense.clear()
-        
-    def show_2(self):
-        x = (0, 0, 255) # Blue
-        b = (0, 0, 0) # Off
-        
-        
-        # Set up where each colour will display
-        creeper_pixels = [
-            b, b, b, x, x, x, b, b,
-            b, b, x, b, b, b, x, b,
-            b, b, b, b, b, b, x, b,
-            b, b, b, b, b, b, b, b,
-            b, b, b, b, x, x, b, b,
-            b, b, b, x, b, b, b, b,
-            b, b, x, b, b, b, b, b,
-            b, b, x, x, x, x, x, b
-        ]
-        self.sense.set_pixels(creeper_pixels)
-        time.sleep(2)
-        self.sense.clear()
-        
-        
-    def waiting_for_joystick_press_down(self):
-        # Define some colours
-        x = (255, 0, 0) # Red
-        b = (0, 0, 0) # Off
-        
-        
-        # Set up where each colour will display
-        creeper_pixels = [
-            b, b, b, x, x, b, b, b,
-            b, b, x, b, b, x, b, b,
-            b, b, b, b, b, x, b, b,
-            b, b, b, b, x, b, b, b,
-            b, b, b, x, b, b, b, b,
-            b, b, b, x, b, b, b, b,
-            b, b, b, b, b, b, b, b,
-            b, b, b, x, b, b, b, b
-        ]
- 
-        # Display these colours on the LED matrix
-        self.sense.set_pixels(creeper_pixels)
-    
-        answer = False
-        
-        while not answer:
-            for event in self.sense.stick.get_events():
-                if(event.direction == 'middle'):
-                    answer = True
-                    self.component.mqtt_client.publish(TOPIC_RESPONSE_CHARGE, '''{"msg": "yes"}''') 
-                    self.sense.clear()
-        
-        
-    def contemplate_charging(self):
-        
-        # trying to make answer non_blocking
-        thread = Thread(target=self.waiting_for_joystick_press_down)
-        thread.start()
-                    
-                            
-    def say_goodbye(self):
-        self._logger.debug('"scooter1" STM is shutting down...')
 
-    def Hz_1_event(self):
+
+
+    def Event_1Hz(self):
         msg = self.status
         
 
         self._logger.debug("scooter 1Hz")
         self.component.mqtt_client.publish(TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
 
+
+    def state_locked(self): 
+        self._logger.debug("Entered state locked")
+
+        self.is_in_use = False
+
+    def state_stopped(self):
+        self._logger.debug("Entered state stopped")
+
+        self.is_in_use = True
+    
+    def state_driving(self):
+        self._logger.debug("Entered state stopped")
+
+        self.is_in_use = True
+
+        start_time = time.timer()
+        while not answer or (time.time() < start_time + 30) :
+            for event in self.sense.stick.get_events():
+                if(event.direction == 'up'):
+                    answer = True
+                    self.component.mqtt_client.publish(TOPIC_RESPONSE_CHARGE, '''{"msg": "yes"}''') 
+                    self.sense.clear()
+                    self.component.stm_driver.send(GO_TO_CHARGE, f"{self.name}")
+                    return
+                if(event.direction == 'down'):
+                    answer = True
+                    self.component.mqtt_client.publish(TOPIC_RESPONSE_CHARGE, '''{"msg": "no"}''')
+                    self.sense
+                    self.component.stm_driver.send(GO_TO_STOPPED, f"{self.name}")
+                    return
+    
+    def state_chargeging(self):
+        self._logger.debug("Entered state chargeing")
+        
+        self.is_in_use = True
+
+
+
+
+
+        
+    def state_respond_to_charge_request(self):
+
+        self._logger.debug("Scooter contemplate charging")
+        
+        # trying to make answer non_blocking
+        thread = Thread(target=self.thread_waiting_for_joystick_press_down)
+        thread.start()
+                    
+                            
+    def say_goodbye(self):
+        self._logger.debug('"scooter1" STM is shutting down...')
+
+
+    def thread_dr
+    def thread_waiting_for_joystick_press_down(self):
+ 
+        # Display these colours on the LED matrix
+        self.sense.set_pixels(SENSE_HAT_DEFINITIONS.question_mark_pixels)
+    
+        answer = False
+        
+
+        start_time = time.time()
+        while not answer or (time.time() < start_time + 30) :
+            for event in self.sense.stick.get_events():
+                if(event.direction == 'up'):
+                    answer = True
+                    self.component.mqtt_client.publish(TOPIC_RESPONSE_CHARGE, '''{"msg": "yes"}''') 
+                    self.sense.clear()
+                    self.component.stm_driver.send(GO_TO_CHARGE, f"{self.name}")
+                    return
+                if(event.direction == 'down'):
+                    answer = True
+                    self.component.mqtt_client.publish(TOPIC_RESPONSE_CHARGE, '''{"msg": "no"}''')
+                    self.sense
+                    self.component.stm_driver.send(GO_TO_STOPPED, f"{self.name}")
+                    return
+        
+                
+        self._logger.debug("Request to charge timout entering locked")
+
+        self.component.mqtt_client.publish(TOPIC_RESPONSE_CHARGE, '''{"msg": "no"}''')
+        self.sense()
+        self.component.stm_driver.send(GO_TO_LOCKED, f"{self.name}")
+        return
+        
+    def helper_show_5(self):
+        self.sense.set_pixels(SENSE_HAT_DEFINITIONS.five_digit_pixels)
+        time.sleep(2)
+        self.sense.clear()
+        
+    def helper_show_2(self):
+        self.sense.set_pixels(SENSE_HAT_DEFINITIONS.two_digit_pixels)
+        time.sleep(2)
+        self.sense.clear()
+    
+ 
+        
 class ScooterManager: 
 
     def on_connect(self, client, userdata, flags, rc): 
@@ -159,7 +192,7 @@ class ScooterManager:
         
         if topic == TOPIC_REQUEST_CHARGE:
             self._logger.debug('"scooter1" is prompted if it would like to be charged')
-            self.stm_driver.send("would_you_like_to_charge", "scooter1")
+            self.stm_driver.send("ask_scooter_charge", "scooter1")
 
         if topic == TOPIC_DISCOUNT:
             if command == "2%":
@@ -170,9 +203,9 @@ class ScooterManager:
                 self._logger.debug(f'scooter1" received 5 percent discount')
                 self.stm_driver.send("5_percent", "scooter1") 
  
-        if command == "would_you_like_to_charge": 
+        if command == "ask_scooter_charge": 
             self._logger.debug('"scooter1" is prompted if it would like to be charged')
-            self.stm_driver.send("would_you_like_to_charge", "scooter1") 
+            self.stm_driver.send("ask_scooter_charge", "scooter1") 
             
         if command == "5%":
             self._logger.debug(f'scooter1" received 5 percent discount')
