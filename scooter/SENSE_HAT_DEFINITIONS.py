@@ -137,7 +137,7 @@ def _display_arrow(direction, sense):
         sense.set_pixels(flat_pixels)
 
 
-def _get_color(pixel_value):
+def _get_color(self, pixel_value):
     return G if pixel_value == 1 else O
 
 
@@ -146,3 +146,84 @@ def stop(self):
     if self.joystick_thread:
         self.joystick_thread.join()
     self.sense.clear()
+
+    
+def display_padlock(sense):
+    padlock_pixels = [
+        O, O, O, O, G, G, O, O,
+        O, O, O, G, O, O, G, O,
+        O, O, G, O, O, O, O, G,
+        O, O, G, O, O, O, O, G,
+        O, O, G, O, O, O, O, G,
+        O, O, G, O, O, O, O, G,
+        O, G, G, G, G, G, G, G,
+        O, G, O, O, O, O, O, G,
+    ]
+
+    flat_pixels = [_get_color(pixel) for pixel in padlock_pixels]
+    sense.set_pixels(flat_pixels)
+
+def animate_unlocking(sense):
+    frames = [
+        # Frame 1: Locked Padlock (initial state)
+        [
+            O, O, O, O, G, G, O, O,
+            O, O, O, G, O, O, G, O,
+            O, O, G, O, O, O, O, G,
+            O, O, G, O, O, O, O, G,
+            O, O, G, O, O, O, O, G,
+            O, O, G, O, O, O, O, G,
+            O, G, G, G, G, G, G, G,
+            O, G, O, O, O, O, O, G,
+        ],
+        # Frame 2: Shackle starts to open
+        [
+            O, O, O, O, G, G, O, O,
+            O, O, O, G, O, O, G, O,
+            O, O, G, O, O, O, O, O,
+            O, O, G, O, O, O, O, G,
+            O, O, G, O, O, O, O, G,
+            O, O, G, O, O, O, O, G,
+            O, G, G, G, G, G, G, G,
+            O, G, O, O, O, O, O, G,
+        ],
+        # Frame 3: Shackle half open
+        [
+            O, O, O, O, G, G, O, O,
+            O, O, O, O, O, O, G, O,
+            O, O, G, O, O, O, O, O,
+            O, O, G, O, O, O, O, O,
+            O, O, G, O, O, O, O, G,
+            O, O, G, O, O, O, O, G,
+            O, G, G, G, G, G, G, G,
+            O, G, O, O, O, O, O, G,
+        ],
+        # Frame 4: Shackle fully open
+        [
+            O, O, O, O, O, O, O, O,
+            O, O, O, O, O, O, G, O,
+            O, O, G, O, O, O, O, O,
+            O, O, G, O, O, O, O, O,
+            O, O, G, O, O, O, O, G,
+            O, O, G, O, O, O, O, G,
+            O, G, G, G, G, G, G, G,
+            O, G, O, O, O, O, O, G,
+        ],
+        # Frame 5: Padlock turns green to indicate unlocked
+        [
+            G, G, G, G, G, G, G, G,
+            G, G, G, G, G, G, G, G,
+            G, G, G, G, G, G, G, G,
+            G, G, G, G, G, G, G, G,
+            G, G, G, G, G, G, G, G,
+            G, G, G, G, G, G, G, G,
+            G, G, G, G, G, G, G, G,
+            G, G, G, G, G, G, G, G,
+        ],
+    ]
+
+    # Play animation
+    for frame in frames:
+        flat_pixels = [_get_color(pixel) for pixel in frame]
+        sense.set_pixels(flat_pixels)
+        time.sleep(0.5)

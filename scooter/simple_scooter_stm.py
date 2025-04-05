@@ -16,6 +16,7 @@ GO_TO_STOPPED = "go_to_stopped"
 GO_TO_LOCKED = "go_to_locked"
 
 REQUEST_UNLOCK = "go_to_enabled"
+REQUEST_LOCK = "go_to_locked"
 
 # States
 
@@ -45,9 +46,9 @@ class ScooterLogic:
         self.joystick_thread = None
         self.stop_joystick_thread = False
 
-        self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
+        self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use, "state": self.state}
         #inital transition
-        t0 = {"source": "initial", "target": "state_locked"}
+        transition_inital = {"source": "initial", "target": "state_locked"}
 
         # TRANSITIONS
         #charger transitions
@@ -56,9 +57,16 @@ class ScooterLogic:
         #t2 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "5_percent", "effect": "helper_show_5; say_goodbye"}
         #t3 = {"source": "state_respond_to_charge_request", "target": "stopped", "trigger": "2_percent", "effect": "helper_show_2; say_goodbye"}
         
+        #state_locked
         transition_go_to_enabled_0 = {"source": "state_locked", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "respond_unlock_request"}
+        
+        #state_enabled
+        transition_go_to_locked = {"sourcer": "state_enabled", "targed": "state_locked", "trigger": REQUEST_LOCK}
+
+        #state_chargeing
         transition_go_to_enabled_1 = {"source": "state_chargeing", "target": "state_enabled", "trigger": REQUEST_UNLOCK, "effect": "respond_unlock_request"}
 
+        #state_respond_to_charge_request
         transition_request_to_chargeing = {"source": "state_respond_to_charge_request", "target": "state_chargeing", "trigger": GO_TO_CHARGE, "effect": "helper_show_5; say_goodbye"}
         transition_request_to_locked = {"source": "state_respond_to_charge_request", "target": "state_locked", "trigger": GO_TO_LOCKED, "effect": "helper_show_2; say_goodbye"}
         
@@ -67,13 +75,13 @@ class ScooterLogic:
 
         # STATES
         state_respond_to_charge_request = {"name": "state_respond_to_charge_request","entry": "state_respond_to_charge_request"}
-        state_enabled = {"name": "state_enabled", "entry": "state_enabled", "exit": ""}
-        state_locked = {"name": "state_locked", "entry": "state_locked", "exit": ""}
+        state_enabled = {"name": "state_enabled", "entry": "state_enabled", "exit": "state_enabled_exit"}
+        state_locked = {"name": "state_locked", "entry": "state_locked", "exit": "state_locked_exit"}
         state_chargeing = {"name": "state_chargeing", "entry": "state_chargeing", "exit": "stop_chargeing"}
         
 
 
-        self.stm = stmpy.Machine(name=name, transitions = [t0, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_chargeing, transition_request_to_locked], obj=self, states = [state_respond_to_charge_request, state_enabled, state_locked, state_chargeing]) 
+        self.stm = stmpy.Machine(name=name, transitions = [transition_inital, transition_go_to_enabled_0, transition_go_to_enabled_1, transition_request_to_locked, transition_request_to_chargeing, transition_request_to_locked], obj=self, states = [state_respond_to_charge_request, state_enabled, state_locked, state_chargeing]) 
         self.component.stm_driver.add_machine(self.stm)
 
         thread_1Hz = Thread(target=self.Event_1Hz)
@@ -85,7 +93,7 @@ class ScooterLogic:
     def Event_1Hz(self):
 
         while 1:
-            self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use}
+            self.status = {"name": self.name, "latitude": self.latitude, "longitude": self.longitude, "in_use": self.is_in_use, "state": self.state}
             msg = self.status
         
             time.sleep(1)
@@ -113,8 +121,15 @@ class ScooterLogic:
     def state_locked(self): 
         self._logger.debug("Entered state locked - idle state")
 
+        SENSE_HAT_DEFINITIONS.display_padlock(self.sense)
+
         self.is_in_use = False
         self.state = "state_locked"
+    
+    def state_locked_exit(self):
+        self._logger.debug("Exit state locked")
+
+        SENSE_HAT_DEFINITIONS.animate_unlocking(self.sense)
     
     
     def state_enabled(self):
@@ -306,10 +321,14 @@ class ScooterManager:
         # subscribe to proper topic(s) of your choic 
         self.mqtt_client.subscribe(MQTT_TOPIC_SCOOTER) 
 
+        # charger requests
         self.mqtt_client.subscribe(TOPIC_REQUEST_CHARGE) 
         self.mqtt_client.subscribe(TOPIC_RESPONSE_CHARGE) 
-        self.mqtt_client.subscribe(TOPIC_MOVEMNT) 
+        self.mqtt_client.subscribe(TOPIC_MOVEMNT)
+
+        # Lock and unlock requests 
         self.mqtt_client.subscribe(TOPIC_REQUEST_UNLOCK) 
+        self.mqtt_client.subscribe(TOPIC_REQUEST_LOCK) 
 
         # start the internal loop to process MQTT messages 
         self.mqtt_client.loop_start() 
