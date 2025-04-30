@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        span{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        button{
+            margin: 10px;
+        }
+        p{
+            text-align: center;
+        }
+        #scooterListContainer {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #scooterList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #scooterList li {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #heatmapContainer { 
+            margin-top: 5px; 
+        }
+        #heatmapImage { 
+            width: 100%;
+            height: auto;
+        }
+
+        #waitForData { 
+            margin-top: 20px; 
+        }
+    </style>
+</head>
+<body>
+    <h1>Options</h1>
+    <span>
+        <button id='scooterStats'><p>Show scooter stats</p></button>
+        <button id='heatMap'><p>Generate heat map</p></button>
+        <button id='serverShutdown'><p>Stop everything</p></button>
+    </span>
+
+    <div id='scooterListContainer' style='display: none;'>
+        <h2>Scooter Overviews</h2>
+        <ul id='scooterList'>
+            </ul>
+    </div>
+
+    <div id='heatmapContainer' style='display: none;'>
+        <img id='heatmapImage' alt='Scooter Heatmap' >
+    </div>
+
+
+    <div id='waitForData' style='display: none;'>
+        <p>Gathering data, please wait...</p>
+    </div>
+
+    <script>
+        const scooterListContainer = document.getElementById('scooterListContainer');
+        const heatmapContainer = document.getElementById('heatmapContainer');
+        const waitForData = document.getElementById('waitForData');
+        
+        document.getElementById('heatMap').addEventListener('click', function() {
+            scooterListContainer.style.display = 'none';
+            heatmapContainer.style.display = 'none';
+            waitForData.style.display = 'block';
+            fetch('/generate_heatmap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'event=button_clicked'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response:', data);
+                if (data.status === 'success') {
+                    waitForData.style.display = 'none';
+                    const heatmapImage = document.getElementById('heatmapImage');
+                    heatmapImage.src = `uimages/scooter_plot.png?timestamp=${new Date().getTime()}`;
+                    scooterListContainer.style.display = 'none';
+                    heatmapContainer.style.display = 'block';
+                } else {
+                    console.error('This is the error right here!', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending event:', error);
+            });
+        });
+
+        document.getElementById('serverShutdown').addEventListener('click', function() {
+            heatmapContainer.style.display = 'none';
+            scooterListContainer.style.display = 'none';
+            fetch('/stop_everything', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'event=button_clicked'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response:', data);
+            })
+            .catch(error => {
+                console.error('Error sending event:', error);
+            });
+        });
+
+        document.getElementById('scooterStats').addEventListener('click', function() {
+            heatmapContainer.style.display = 'none';
+            fetch('/generate_scooter_stats', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'event=button_clicked'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response (scooter stats):', data);
+                if (data.status === 'success' && data.scooter_stats) {
+                    const scooterList = document.getElementById('scooterList');
+                    scooterList.innerHTML = '';
+                    data.scooter_stats.forEach(name => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = name[0] + '\n' +  name[1][0] + '\n' +  name[1][1] + '\n' + name[1][2];
+                        scooterList.appendChild(listItem);
+                    });
+                    scooterListContainer.style.display = 'block';
+                } else {
+                    console.error('Failed to retrieve scooter names:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending event (scooter stats):', error);
+            });
+        });
+    </script>
+</body>
+</html>
