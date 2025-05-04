@@ -42,6 +42,8 @@ class ScooterLogic:
         t4 = {'source': 'in_use', 'target': 'in_use', 'trigger': 'confirm_booking', 'effect' : 'book_this'}
         t5 = {'source': 'in_use', 'target': 'final', 'trigger': 'abort', 'effect': 'say_goodbye'}
         t6 = {'source': 'in_use', 'target': 'is_free', 'trigger': 'stop_booking', 'effect' : 'end_trip; lock_animation'}
+        
+        
 
         # skip sending coordinates when scooter is booked, aka in_use 
         in_use = {'name': 'in_use', 'give_coordinates' : ''} 
@@ -49,7 +51,7 @@ class ScooterLogic:
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6], obj=self, states = [in_use]) 
         self.component.stm_driver.add_machine(self.stm)
         
-        # # 
+        # Threads used to avoid blocking main function
         self.thread_1Hz = Thread(target=self.Event_1Hz)
         self.thread_1Hz.start()
 
@@ -97,7 +99,7 @@ class ScooterLogic:
         self.thread_handle_joystick.join()
         self._logger.debug(f'{self.name} says : GOODBYE!') 
         
-    # sense hat functionality
+    # # sense hat functionality
         
     def Event_1Hz(self):
         while self.enable_thread:
@@ -234,5 +236,6 @@ number_of_scooters_to_spawn = sys.argv[1]
 
 # initiate scooter manager
 scooter_manager = ScooterManager(int(number_of_scooters_to_spawn)) 
+
 
 

@@ -37,19 +37,16 @@ class ServerLogic:
         t7 = {'source': 'idle', 'target': 'idle', 'trigger': 'scooterlist_request', 'effect': 'send_info_to_user'}
         t8 = {'source': 'idle', 'target': 'idle', 'trigger': 'end_book_single', 'effect': 'end_single_booking_confirmation'}
         
-        
-
         # entry actions and deferred event
-        await_position_data = {'name': 'await_position_data', 'entry': 'start_timer("t0", "10000")', 'exit': 'stop_timer("t0")', 'book_single': 'defer'}
-        await_booking_data = {'name': 'await_booking_data', 'entry': 'start_timer("t1", "10000")', 'exit': 'stop_timer("t1")', 'book_single': 'defer'}
+        await_position_data = {'name': 'await_position_data', 'entry': 'start_timer("t0", "10000")', 'exit': 'stop_timer("t0")', 'book_single': 'defer', 'end_book_single' : 'defer'}
+        await_booking_data = {'name': 'await_booking_data', 'entry': 'start_timer("t1", "10000")', 'exit': 'stop_timer("t1")', 'book_single': 'defer', 'end_book_single' : 'defer'}
                 
         # adding stm to driver
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6, t7, t8 ], obj=self, states = [await_position_data, await_booking_data]) 
         self.component.stm_driver.add_machine(self.stm) 
         
     def end_single_booking_confirmation(self):
-        self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, self.component.payload)
-        self.component.payload = 'empty'
+        self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, self.component.single_cancel_queue.pop(0))
         
         
     def send_info_to_user(self):
@@ -156,28 +153,63 @@ class ServerManager:
             scooter_name = payload.get('scooter_name')
             user_name = payload.get('user_name')
             if(self.scooter_stats[scooter_name][0] == STATUS_BOOKED and self.scooter_stats[scooter_name][1] == user_name):
-                # TODO check if scooter near charging station
+                # log previous bookings in a "database"
                 discount = None
                 booking_ended_at = time.time()
-                # log previous bookings in a "database"
                 self.past_bookings[self.index] = (user_name, scooter_name, self.scooter_stats[scooter_name][2], booking_ended_at, discount)
                 self.index += 1
                 message = {'user_name' : user_name, 'msg': 'ack_end_book_single'}
                 reply = json.dumps(message)        
                 self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
                 message = {'msg': 'stop_booking','scooter_name' : scooter_name}
-                self.payload = json.dumps(message)  
+                payload = json.dumps(message)
+                self.single_cancel_queue.append(payload) 
                 self.stm_driver.send('end_book_single', self.name)
+                # reset current stats data
+                self.scooter_stats[scooter_name] = (STATUS_FREE, None, None)
             else:
                 message = {'user_name' : user_name, 'msg': 'cancel_denied', 'scooter_name': scooter_name}
                 reply = json.dumps(message)        
                 self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
-            
-                
+                    
+        #TODO discount
+        
         #TODO cancel  multiple ride
         #{'msg': 'end_book_multiple', 'user_name' : username, 'scooter_name': scooter_name}
-        
-        #TODO discount
+        if command == 'end_book_multiple':
+            scooter_names = payload.get('scooter_names')
+            user_name = payload.get('user_name')
+            already_unavailable_scooters = []
+            for scooter_name in scooter_names:
+                if(self.scooter_stats[scooter_name][0] != STATUS_BOOKED):
+                    already_unavailable_scooters.append(scooter_name)
+                    print(f'{scooter_name} is ALREADY available!')
+            if(len(already_unavailable_scooters) == 0):
+                for scooter_name in scooter_names:
+                    if(self.scooter_stats[scooter_name][0] == STATUS_BOOKED and self.scooter_stats[scooter_name][1] == user_name):
+                        # log previous bookings in a "database"
+                        discount = None
+                        booking_ended_at = time.time()
+                        self.past_bookings[self.index] = (user_name, scooter_name, self.scooter_stats[scooter_name][2], booking_ended_at, discount)
+                        self.index += 1
+                        message = {'user_name' : user_name, 'msg': 'ack_end_book_single'}
+                        reply = json.dumps(message)        
+                        self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
+                        message = {'msg': 'stop_booking','scooter_name' : scooter_name}
+                        payload = json.dumps(message)  
+                        self.single_cancel_queue.append(payload)
+                        self.stm_driver.send('end_book_single', self.name)
+                        # reset current stats data
+                        self.scooter_stats[scooter_name] = (STATUS_FREE, None, None)
+                        
+                    else:
+                        message = {'user_name' : user_name, 'msg': 'cancel_denied', 'scooter_name': scooter_name}
+                        reply = json.dumps(message)        
+                        self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)   
+            else:
+                message = {'user_name' : user_name, 'msg': 'cancel_denied', 'scooter_names': already_unavailable_scooters}
+                reply = json.dumps(message)        
+                self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
                   
         if command == 'book_multiple':
             scooter_names = payload.get('scooter_names')
@@ -224,6 +256,7 @@ class ServerManager:
         self.past_bookings[0] = ('-', '-', '-', '-', '-')
         self.index = 1
         self.single_booking_queue = []
+        self.single_cancel_queue = []
         self.payload = 'empty'
         for i in range(0, number_of_scooters):
             # each scooter can have the following data stored at the server: 
@@ -274,8 +307,3 @@ ch.setLevel(debug_level)
 formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(message)s') 
 ch.setFormatter(formatter) 
 logger.addHandler(ch) 
-
-
-
-
-
