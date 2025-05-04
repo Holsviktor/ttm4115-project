@@ -46,8 +46,7 @@ class ServerLogic:
         self.component.stm_driver.add_machine(self.stm) 
         
     def end_single_booking_confirmation(self):
-        self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, self.component.payload)
-        self.component.payload = 'empty'
+        self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, self.component.single_cancel_queue.pop(0))
         
         
     def send_info_to_user(self):
@@ -163,7 +162,8 @@ class ServerManager:
                 reply = json.dumps(message)        
                 self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
                 message = {'msg': 'stop_booking','scooter_name' : scooter_name}
-                self.payload = json.dumps(message)  
+                payload = json.dumps(message)
+                self.single_cancel_queue.append(payload) 
                 self.stm_driver.send('end_book_single', self.name)
                 # reset current stats data
                 self.scooter_stats[scooter_name] = (STATUS_FREE, None, None)
@@ -196,10 +196,12 @@ class ServerManager:
                         reply = json.dumps(message)        
                         self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
                         message = {'msg': 'stop_booking','scooter_name' : scooter_name}
-                        self.payload = json.dumps(message)  
+                        payload = json.dumps(message)  
+                        self.single_cancel_queue.append(payload)
                         self.stm_driver.send('end_book_single', self.name)
                         # reset current stats data
                         self.scooter_stats[scooter_name] = (STATUS_FREE, None, None)
+                        
                     else:
                         message = {'user_name' : user_name, 'msg': 'cancel_denied', 'scooter_name': scooter_name}
                         reply = json.dumps(message)        
@@ -254,6 +256,7 @@ class ServerManager:
         self.past_bookings[0] = ('-', '-', '-', '-', '-')
         self.index = 1
         self.single_booking_queue = []
+        self.single_cancel_queue = []
         self.payload = 'empty'
         for i in range(0, number_of_scooters):
             # each scooter can have the following data stored at the server: 
