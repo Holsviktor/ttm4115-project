@@ -15,7 +15,7 @@ MQTT_BROKER = 'mqtt20.iik.ntnu.no'
 MQTT_PORT = 1883 
 MQTT_TOPIC_SCOOTER_POSITIONS = '10/scooter_positions' 
 MQTT_TOPIC_SCOOTER_STATUS = '10/scooter_status'
-MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/from_server_to_scooters'
+MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/server_request'
 MQTT_TOPIC_TO_SERVER = '10/to_server'
 
 class ScooterLogic: 
