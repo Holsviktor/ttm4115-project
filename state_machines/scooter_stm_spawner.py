@@ -238,3 +238,4 @@ number_of_scooters_to_spawn = sys.argv[1]
 scooter_manager = ScooterManager(int(number_of_scooters_to_spawn)) 
 
 
+
