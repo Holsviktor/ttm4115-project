@@ -37,11 +37,9 @@ class ServerLogic:
         t7 = {'source': 'idle', 'target': 'idle', 'trigger': 'scooterlist_request', 'effect': 'send_info_to_user'}
         t8 = {'source': 'idle', 'target': 'idle', 'trigger': 'end_book_single', 'effect': 'end_single_booking_confirmation'}
         
-        
-
         # entry actions and deferred event
-        await_position_data = {'name': 'await_position_data', 'entry': 'start_timer("t0", "10000")', 'exit': 'stop_timer("t0")', 'book_single': 'defer'}
-        await_booking_data = {'name': 'await_booking_data', 'entry': 'start_timer("t1", "10000")', 'exit': 'stop_timer("t1")', 'book_single': 'defer'}
+        await_position_data = {'name': 'await_position_data', 'entry': 'start_timer("t0", "10000")', 'exit': 'stop_timer("t0")', 'book_single': 'defer', 'end_book_single' : 'defer'}
+        await_booking_data = {'name': 'await_booking_data', 'entry': 'start_timer("t1", "10000")', 'exit': 'stop_timer("t1")', 'book_single': 'defer', 'end_book_single' : 'defer'}
                 
         # adding stm to driver
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6, t7, t8 ], obj=self, states = [await_position_data, await_booking_data]) 
@@ -183,7 +181,6 @@ class ServerManager:
             user_name = payload.get('user_name')
             already_unavailable_scooters = []
             for scooter_name in scooter_names:
-                print("---------------->", scooter_name)
                 if(self.scooter_stats[scooter_name][0] != STATUS_BOOKED):
                     already_unavailable_scooters.append(scooter_name)
                     print(f'{scooter_name} is ALREADY available!')
