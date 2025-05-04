@@ -1,0 +1,5 @@
+# you need to install the following packages to be able to run the state machine communication:
+
+# pip install flask
+# pip install stmpy
+# pip install pip install paho-mqtt
