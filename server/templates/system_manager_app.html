@@ -30,11 +30,13 @@
             list-style-type: none;
             padding: 0;
         }
-        #scooterList li {
-            margin: 5px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        #previousBookingsListContainer{
+            margin-top: 20px;
+            text-align: center;
+        }
+        #bookingsList {
+            list-style-type: none;
+            padding: 0;
         }
         #heatmapContainer { 
             margin-top: 5px; 
@@ -54,13 +56,44 @@
     <span>
         <button id='scooterStats'><p>Show scooter stats</p></button>
         <button id='heatMap'><p>Generate heat map</p></button>
+        <button id='previousBookings'><p>Show previous bookings</p></button>
         <button id='serverShutdown'><p>Stop everything</p></button>
     </span>
 
     <div id='scooterListContainer' style='display: none;'>
         <h2>Scooter Overviews</h2>
-        <ul id='scooterList'>
-            </ul>
+        <table id="scooterList" border="1" style="margin: 0 auto;">
+            <thead>
+                <tr>
+                    <th>Scooter Name</th>
+                    <th>Status</th>
+                    <th>Username</th>
+                    <th>Booked At</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+
+
+    <div id='previousBookingsListContainer' style='display: none;'>
+        <h2>Scooter Overviews</h2>
+        <table id="bookingsList" border="1" style="margin: 0 auto;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Scooter name</th>
+                    <th>Booked At</th>
+                    <th>Returned At</th>
+                    <th>Discount</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
     </div>
 
     <div id='heatmapContainer' style='display: none;'>
@@ -76,10 +109,12 @@
         const scooterListContainer = document.getElementById('scooterListContainer');
         const heatmapContainer = document.getElementById('heatmapContainer');
         const waitForData = document.getElementById('waitForData');
+        const previousBookingsListContainer = document.getElementById('previousBookingsListContainer');
         
         document.getElementById('heatMap').addEventListener('click', function() {
             scooterListContainer.style.display = 'none';
             heatmapContainer.style.display = 'none';
+            previousBookingsListContainer.style.display = 'none';
             waitForData.style.display = 'block';
             fetch('/generate_heatmap', {
                 method: 'POST',
@@ -94,9 +129,10 @@
                 if (data.status === 'success') {
                     waitForData.style.display = 'none';
                     const heatmapImage = document.getElementById('heatmapImage');
-                    heatmapImage.src = `uimages/scooter_plot.png?timestamp=${new Date().getTime()}`;
+                    heatmapImage.src = `images/scooter_plot.png?timestamp=${new Date().getTime()}`;
                     scooterListContainer.style.display = 'none';
                     heatmapContainer.style.display = 'block';
+                    previousBookingsListContainer.style.display = 'none';
                 } else {
                     console.error('This is the error right here!', data);
                 }
@@ -109,6 +145,7 @@
         document.getElementById('serverShutdown').addEventListener('click', function() {
             heatmapContainer.style.display = 'none';
             scooterListContainer.style.display = 'none';
+            previousBookingsListContainer.style.display = 'none';
             fetch('/stop_everything', {
                 method: 'POST',
                 headers: {
@@ -127,6 +164,7 @@
 
         document.getElementById('scooterStats').addEventListener('click', function() {
             heatmapContainer.style.display = 'none';
+            previousBookingsListContainer.style.display = 'none';
             fetch('/generate_scooter_stats', {
                 method: 'POST',
                 headers: {
@@ -138,20 +176,77 @@
             .then(data => {
                 console.log('Server response (scooter stats):', data);
                 if (data.status === 'success' && data.scooter_stats) {
-                    const scooterList = document.getElementById('scooterList');
-                    scooterList.innerHTML = '';
+                    const scooterListBody = document.querySelector('#scooterList tbody');
+                    scooterListBody.innerHTML = '';
                     data.scooter_stats.forEach(name => {
-                        const listItem = document.createElement('li');
-                        listItem.textContent = name[0] + '\n' +  name[1][0] + '\n' +  name[1][1] + '\n' + name[1][2];
-                        scooterList.appendChild(listItem);
+                        const tr = document.createElement('tr');
+                        const values = [
+                            name[0],
+                            name[1][0],
+                            name[1][1] ?? ' ',
+                            name[1][2] ?? ' '
+                        ];
+                        values.forEach(val => {
+                            const td = document.createElement('td');
+                            td.textContent = val;
+                            tr.appendChild(td);
+                        });
+                        scooterListBody.appendChild(tr);
                     });
                     scooterListContainer.style.display = 'block';
+
                 } else {
                     console.error('Failed to retrieve scooter names:', data);
                 }
             })
             .catch(error => {
                 console.error('Error sending event (scooter stats):', error);
+            });
+        });
+
+
+        document.getElementById('previousBookings').addEventListener('click', function() {
+            heatmapContainer.style.display = 'none';
+            scooterListContainer.style.display = 'none';
+
+            fetch('/generate_previous_bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'event=button_clicked'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response (previous bookings):', data);
+                if (data.status === 'success' && data.past_bookings) {
+                    const bookingsListBody= document.querySelector('#bookingsList tbody');
+                    bookingsListBody.innerHTML = '';
+                    data.past_bookings.forEach(name => {
+                        const tr = document.createElement('tr');
+                        const values = [
+                            name[0],
+                            name[1][0],
+                            name[1][1] ?? ' ',
+                            name[1][2] ?? ' ',
+                            name[1][3] ?? ' ',
+                            name[1][4] ?? ' '
+                        ];
+                        values.forEach(val => {
+                            const td = document.createElement('td');
+                            td.textContent = val;
+                            tr.appendChild(td);
+                        });
+                        bookingsListBody.appendChild(tr);
+                    });
+                    previousBookingsListContainer.style.display = 'block';
+
+                } else {
+                    console.error('Failed to retrieve previous booking data:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending event (previous booking data):', error);
             });
         });
     </script>

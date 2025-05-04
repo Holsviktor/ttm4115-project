@@ -4,7 +4,7 @@ import os
 import time
 import subprocess
 
-NUMBER_OF_SCOOTERS = 5
+NUMBER_OF_SCOOTERS = 10
 
 
 def flask_server_shutdown(scooter_process):
@@ -27,7 +27,7 @@ def flask_server_shutdown(scooter_process):
 if __name__ == '__main__':
     
     
-    app = Flask(__name__, static_folder='uimages')
+    app = Flask(__name__, static_folder='images')
 
     # state machine connected to this server
     server_manager_instance  = create_server_manager(NUMBER_OF_SCOOTERS)
@@ -41,20 +41,17 @@ if __name__ == '__main__':
         # html files needs to be placed in a folder called "templates", Flask looks there by default to find the requested template
         return render_template('system_manager_app.html')
 
-    # generate_heatmap() function receives the "button click" event
-    # from html template to trigger server-stm transition
-    # which facilitates collection of scooter positional data
     @app.route('/generate_heatmap', methods=['POST'])
     def generate_heatmap():
         event = request.form.get('event')
         if event == 'button_clicked':
-            if os.path.exists('uimages/scooter_plot.png'):
-                os.remove('uimages/scooter_plot.png')
+            if os.path.exists('images/scooter_plot.png'):
+                os.remove('images/scooter_plot.png')
                 print('FLASK: Removed existing scooter_plot.png')
-            server_manager_instance.stm_driver.send('get_positional_data', 'my_server')
+            server_manager_instance.stm_driver.send('get_positional_data', server_manager_instance.name)
             picture_found = False
             while not picture_found:
-                picture_found = os.path.exists('uimages/scooter_plot.png')
+                picture_found = os.path.exists('images/scooter_plot.png')
             return jsonify({'status': 'success', 'triggered': event})
         else:
             return jsonify({'status': 'error', 'message': f'Invalid event: {event}'}), 400
@@ -63,9 +60,18 @@ if __name__ == '__main__':
     def generate_scooter_stats():
         event = request.form.get('event')
         if event == 'button_clicked':
-            # You can interact with the scooter_manager_instance here if needed
-            # scooter_names = scooter_manager_instance.scooters
             return jsonify({'status': 'success', 'triggered': event, 'scooter_stats': list(server_manager_instance.scooter_stats.items())})
+        else:
+            return jsonify({'status': 'error', 'message': f'Invalid event: {event}'}), 400
+        
+        
+
+    @app.route('/generate_previous_bookings', methods=['POST'])
+    def generate_previous_bookings():
+        event = request.form.get('event')
+        if event == 'button_clicked':
+            print(list(server_manager_instance.past_bookings.items()))
+            return jsonify({'status': 'success', 'triggered': event, 'past_bookings': list(server_manager_instance.past_bookings.items())})
         else:
             return jsonify({'status': 'error', 'message': f'Invalid event: {event}'}), 400
     
@@ -73,8 +79,7 @@ if __name__ == '__main__':
     def stop_everything():
         event = request.form.get('event')
         if event == 'button_clicked':
-            server_manager_instance.stm_driver.send('abort', 'my_server')
-            # schedule server shutdown after 10 seconds
+            server_manager_instance.stm_driver.send('abort', server_manager_instance.name)
             flask_server_shutdown(scooter_process)
             
         else:
