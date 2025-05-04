@@ -173,12 +173,43 @@ class ServerManager:
                 message = {'user_name' : user_name, 'msg': 'cancel_denied', 'scooter_name': scooter_name}
                 reply = json.dumps(message)        
                 self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
-            
-                
+                    
+        #TODO discount
+        
         #TODO cancel  multiple ride
         #{'msg': 'end_book_multiple', 'user_name' : username, 'scooter_name': scooter_name}
-        
-        #TODO discount
+        if command == 'end_book_multiple':
+            scooter_names = payload.get('scooter_names')
+            user_name = payload.get('user_name')
+            already_unavailable_scooters = []
+            for scooter_name in scooter_names:
+                if(self.scooter_stats[scooter_name][0] != STATUS_BOOKED):
+                    already_unavailable_scooters.append(scooter_name)
+                    print(f'{scooter_name} is ALREADY available!')
+            if(len(already_unavailable_scooters) == 0):
+                for scooter_name in scooter_names:
+                    if(self.scooter_stats[scooter_name][0] == STATUS_BOOKED and self.scooter_stats[scooter_name][1] == user_name):
+                        # log previous bookings in a "database"
+                        discount = None
+                        booking_ended_at = time.time()
+                        self.past_bookings[self.index] = (user_name, scooter_name, self.scooter_stats[scooter_name][2], booking_ended_at, discount)
+                        self.index += 1
+                        message = {'user_name' : user_name, 'msg': 'ack_end_book_single'}
+                        reply = json.dumps(message)        
+                        self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
+                        message = {'msg': 'stop_booking','scooter_name' : scooter_name}
+                        self.payload = json.dumps(message)  
+                        self.stm_driver.send('end_book_single', self.name)
+                        # reset current stats data
+                        self.scooter_stats[scooter_name] = (STATUS_FREE, None, None)
+                    else:
+                        message = {'user_name' : user_name, 'msg': 'cancel_denied', 'scooter_name': scooter_name}
+                        reply = json.dumps(message)        
+                        self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)   
+            else:
+                message = {'user_name' : user_name, 'msg': 'cancel_denied', 'scooter_names': already_unavailable_scooters}
+                reply = json.dumps(message)        
+                self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
                   
         if command == 'book_multiple':
             scooter_names = payload.get('scooter_names')
@@ -275,8 +306,3 @@ ch.setLevel(debug_level)
 formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(message)s') 
 ch.setFormatter(formatter) 
 logger.addHandler(ch) 
-
-
-
-
-
