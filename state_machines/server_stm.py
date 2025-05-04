@@ -8,11 +8,11 @@ import time
 MQTT_BROKER = 'mqtt20.iik.ntnu.no' 
 MQTT_PORT = 1883
 
-MQTT_TOPIC_SCOOTER_POSITIONS = '10/test/scooter_positions'
-MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/test/from_server_to_scooters'
-MQTT_TOPIC_FROM_SERVER_TO_USER_APPS = '10/test/from_server_to_user_apps'
-MQTT_TOPIC_FROM_SERVER_TO_CHARGER = '10/test/from_server_to_charger'
-MQTT_TOPIC_TO_SERVER = '10/test/to_server'
+MQTT_TOPIC_SCOOTER_POSITIONS = '10/scooter_positions'
+MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/from_server_to_scooters'
+MQTT_TOPIC_FROM_SERVER_TO_USER_APPS = '10/from_server_to_user_apps'
+MQTT_TOPIC_FROM_SERVER_TO_CHARGER = '10/from_server_to_charger'
+MQTT_TOPIC_TO_SERVER = '10/to_server'
 
 STATUS_FREE = 'free'
 STATUS_BOOKED = 'booked'
