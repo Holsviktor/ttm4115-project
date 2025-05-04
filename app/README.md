@@ -1,6 +1,10 @@
 # Dependencies
-kivy \n
+kivy
+
 opencv-python
+
 pyzbar
+
 kivygarden
+
 "kivy_garden.mapview"
