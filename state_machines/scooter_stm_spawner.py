@@ -1,4 +1,4 @@
-from sense_hat import SenseHat
+# from sense_hat import SenseHat
 from threading import Thread 
 import json
 import logging 
@@ -13,10 +13,10 @@ import time
 
 MQTT_BROKER = 'mqtt20.iik.ntnu.no' 
 MQTT_PORT = 1883 
-MQTT_TOPIC_SCOOTER_POSITIONS = '10/scooter_positions' 
-MQTT_TOPIC_SCOOTER_STATUS = '10/scooter_status'
-MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/from_server_to_scooters'
-MQTT_TOPIC_TO_SERVER = '10/to_server'
+MQTT_TOPIC_SCOOTER_POSITIONS = '10/test/scooter_positions' 
+MQTT_TOPIC_SCOOTER_STATUS = '10/test/scooter_status'
+MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/test/from_server_to_scooters'
+MQTT_TOPIC_TO_SERVER = '10/test/to_server'
 
 class ScooterLogic: 
 
@@ -25,8 +25,8 @@ class ScooterLogic:
         self._logger = logging.getLogger(__name__) 
         self.name = name 
         self.component = component 
-        self.sense = SenseHat()
-        self.sense.clear()
+        # self.sense = SenseHat()
+        # self.sense.clear()
         # 'GPS coordinates are internal'
         self.x = x 
         self.y = y
@@ -42,6 +42,8 @@ class ScooterLogic:
         t4 = {'source': 'in_use', 'target': 'in_use', 'trigger': 'confirm_booking', 'effect' : 'book_this'}
         t5 = {'source': 'in_use', 'target': 'final', 'trigger': 'abort', 'effect': 'say_goodbye'}
         t6 = {'source': 'in_use', 'target': 'is_free', 'trigger': 'stop_booking', 'effect' : 'end_trip; lock_animation'}
+        
+        
 
         # skip sending coordinates when scooter is booked, aka in_use 
         in_use = {'name': 'in_use', 'give_coordinates' : ''} 
@@ -49,25 +51,25 @@ class ScooterLogic:
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6], obj=self, states = [in_use]) 
         self.component.stm_driver.add_machine(self.stm)
         
-        # # 
-        self.thread_1Hz = Thread(target=self.Event_1Hz)
-        self.thread_1Hz.start()
+        # # Threads used to avoid blocking main function
+        # self.thread_1Hz = Thread(target=self.Event_1Hz)
+        # self.thread_1Hz.start()
 
-        self.thread_handle_joystick = Thread(target=self._handle_joystick_input)
-        self.thread_handle_joystick.start()
+        # self.thread_handle_joystick = Thread(target=self._handle_joystick_input)
+        # self.thread_handle_joystick.start()
                
     # animation of scooter locking on sense hat
     def lock_animation(self):
         self.ts = 'empty'
         self._logger.debug(f'{self.name} is LOCKED.')
-        sense_hat_definitions.animate_locking(self.sense)
-        self.sense.clear()
+        # sense_hat_definitions.animate_locking(self.sense)
+        # self.sense.clear()
         
     # animation of scooter unlocking on sense hat
     def unlock_animation(self):
         self._logger.debug(f'{self.name} is UNLOCKED.')
-        sense_hat_definitions.animate_unlocking(self.sense)
-        self.sense.clear()
+        # sense_hat_definitions.animate_unlocking(self.sense)
+        # self.sense.clear()
     
     # scooter ack to server that it is no longer booked
     def end_trip(self):
@@ -97,46 +99,46 @@ class ScooterLogic:
         self.thread_handle_joystick.join()
         self._logger.debug(f'{self.name} says : GOODBYE!') 
         
-    # sense hat functionality
+    # # sense hat functionality
         
-    def Event_1Hz(self):
-        while self.enable_thread:
-            self.status = {'name': self.name, 'x': self.x, 'y': self.y, 'state' : self.component.stm_driver._stms_by_id[self.name]._state}
-            msg = self.status
-            time.sleep(5)
-            self._logger.debug(f'{self.name} 5Hz')
-            self.component.mqtt_client.publish(MQTT_TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
+    # def Event_1Hz(self):
+    #     while self.enable_thread:
+    #         self.status = {'name': self.name, 'x': self.x, 'y': self.y, 'state' : self.component.stm_driver._stms_by_id[self.name]._state}
+    #         msg = self.status
+    #         time.sleep(5)
+    #         self._logger.debug(f'{self.name} 5Hz')
+    #         self.component.mqtt_client.publish(MQTT_TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
         
-    def _handle_joystick_input(self):
-        while self.enable_thread:
-            if self.component.stm_driver._stms_by_id[self.name]._state != 'in_use':
-                time.sleep(1)
-            else:
-                for event in self.sense.stick.get_events():
-                    # x and y are adjusted to contain scooters in the grid
-                    if event.action == 'pressed':
-                        if event.direction == 'up':
-                            sense_hat_definitions._display_arrow('up', self.sense)
-                            self.x += 1
-                            if self.x > 988:
-                                self.x = 988
-                        elif event.direction == 'down':
-                            sense_hat_definitions._display_arrow('down', self.sense)
-                            self.x -= 1
-                            if self.x < 0:
-                                self.x = 0
-                        elif event.direction == 'left':
-                            sense_hat_definitions._display_arrow('left', self.sense)
-                            self.y -=1
-                            if self.y < 0:
-                                self.y = 0
-                        elif event.direction == 'right':
-                            sense_hat_definitions._display_arrow('right', self.sense)
-                            self.y += 1
-                            if self.y > 661:
-                                self.y = 661
-                        elif event.direction == 'middle':
-                            sense_hat_definitions._display_arrow('stop', self.sense)
+    # def _handle_joystick_input(self):
+    #     while self.enable_thread:
+    #         if self.component.stm_driver._stms_by_id[self.name]._state != 'in_use':
+    #             time.sleep(1)
+    #         else:
+    #             for event in self.sense.stick.get_events():
+    #                 # x and y are adjusted to contain scooters in the grid
+    #                 if event.action == 'pressed':
+    #                     if event.direction == 'up':
+    #                         sense_hat_definitions._display_arrow('up', self.sense)
+    #                         self.x += 1
+    #                         if self.x > 988:
+    #                             self.x = 988
+    #                     elif event.direction == 'down':
+    #                         sense_hat_definitions._display_arrow('down', self.sense)
+    #                         self.x -= 1
+    #                         if self.x < 0:
+    #                             self.x = 0
+    #                     elif event.direction == 'left':
+    #                         sense_hat_definitions._display_arrow('left', self.sense)
+    #                         self.y -=1
+    #                         if self.y < 0:
+    #                             self.y = 0
+    #                     elif event.direction == 'right':
+    #                         sense_hat_definitions._display_arrow('right', self.sense)
+    #                         self.y += 1
+    #                         if self.y > 661:
+    #                             self.y = 661
+    #                     elif event.direction == 'middle':
+    #                         sense_hat_definitions._display_arrow('stop', self.sense)
 
 
 class ScooterManager: 

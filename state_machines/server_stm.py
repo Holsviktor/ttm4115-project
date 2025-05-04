@@ -8,11 +8,11 @@ import time
 MQTT_BROKER = 'mqtt20.iik.ntnu.no' 
 MQTT_PORT = 1883
 
-MQTT_TOPIC_SCOOTER_POSITIONS = '10/scooter_positions'
-MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/from_server_to_scooters'
-MQTT_TOPIC_FROM_SERVER_TO_USER_APPS = '10/from_server_to_user_apps'
-MQTT_TOPIC_FROM_SERVER_TO_CHARGER = '10/from_server_to_charger'
-MQTT_TOPIC_TO_SERVER = '10/to_server'
+MQTT_TOPIC_SCOOTER_POSITIONS = '10/test/scooter_positions'
+MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/test/from_server_to_scooters'
+MQTT_TOPIC_FROM_SERVER_TO_USER_APPS = '10/test/from_server_to_user_apps'
+MQTT_TOPIC_FROM_SERVER_TO_CHARGER = '10/test/from_server_to_charger'
+MQTT_TOPIC_TO_SERVER = '10/test/to_server'
 
 STATUS_FREE = 'free'
 STATUS_BOOKED = 'booked'
@@ -156,10 +156,9 @@ class ServerManager:
             scooter_name = payload.get('scooter_name')
             user_name = payload.get('user_name')
             if(self.scooter_stats[scooter_name][0] == STATUS_BOOKED and self.scooter_stats[scooter_name][1] == user_name):
-                # TODO check if scooter near charging station
+                # log previous bookings in a "database"
                 discount = None
                 booking_ended_at = time.time()
-                # log previous bookings in a "database"
                 self.past_bookings[self.index] = (user_name, scooter_name, self.scooter_stats[scooter_name][2], booking_ended_at, discount)
                 self.index += 1
                 message = {'user_name' : user_name, 'msg': 'ack_end_book_single'}
@@ -168,6 +167,8 @@ class ServerManager:
                 message = {'msg': 'stop_booking','scooter_name' : scooter_name}
                 self.payload = json.dumps(message)  
                 self.stm_driver.send('end_book_single', self.name)
+                # reset current stats data
+                self.scooter_stats[scooter_name] = (STATUS_FREE, None, None)
             else:
                 message = {'user_name' : user_name, 'msg': 'cancel_denied', 'scooter_name': scooter_name}
                 reply = json.dumps(message)        
