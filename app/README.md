@@ -1,5 +1,5 @@
 # Dependencies
-kivy
+kivy \n
 opencv-python
 pyzbar
 kivygarden
