@@ -183,6 +183,7 @@ class ServerManager:
             user_name = payload.get('user_name')
             already_unavailable_scooters = []
             for scooter_name in scooter_names:
+                print("---------------->", scooter_name)
                 if(self.scooter_stats[scooter_name][0] != STATUS_BOOKED):
                     already_unavailable_scooters.append(scooter_name)
                     print(f'{scooter_name} is ALREADY available!')
