@@ -1,8 +1,7 @@
 # you need to install the following packages to be able to run the user app:
 
-# pip install kivy
-# pip install opencv-python
-# pip install pyzbar
-# pip install kivy-garden
-# pip install "kivy_garden.mapview"
-# pip install mapview
+kivy
+opencv-python
+pyzbar
+kivy-garden
+kivy_garden.mapview
