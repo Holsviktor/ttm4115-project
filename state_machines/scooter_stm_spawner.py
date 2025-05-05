@@ -271,6 +271,13 @@ class ScooterManager:
             self.scooters.append(f'scooter{i}')
             random.seed = random.randint(0, 1337)
             ScooterLogic(f'scooter{i}', self, x = random.randint(0, 988), y = random.randint(0, 661)) 
+            
+            #REMOVE:
+            if i == 8:
+                break
+            
+            
+            
         ScooterLogic(f'test_discount', self, x = 510, y = 360)
         
         
