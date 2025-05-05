@@ -150,7 +150,7 @@ class ScooterLogic:
         answer = False
         while not answer:
             for event in self.sense.stick.get_events():
-                if(event.direction == 'middle'):
+                if(event.direction == ('up' or 'down' or 'right' or 'left')):
                     answer = True
                     # simulate setting scooter to charge
                     sense_hat_definitions._display_arrow('stop', self.sense)
