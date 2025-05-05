@@ -7,7 +7,7 @@ import subprocess
 NUMBER_OF_SCOOTERS = 10
 
 
-def flask_server_shutdown(scooter_process):
+def flask_server_shutdown(scooter_process, charger_process):
         time.sleep(5)
         print("Flask server says: shutting down scooter stm process.")
         if scooter_process.poll() is None: 
@@ -15,7 +15,14 @@ def flask_server_shutdown(scooter_process):
             try:
                 scooter_process.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                scooter_process.kill()     
+                scooter_process.kill()   
+        if charger_process.poll() is None: 
+            charger_process.terminate()     
+            try:
+                charger_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                charger_process.kill()  
+          
         print("Countdown to Flask server shutdown: ")
         for i in range(1, 11):
             print(f"{11 - i} . . .")
@@ -34,6 +41,7 @@ if __name__ == '__main__':
     
     # other state machines need to spawn as independent processes
     scooter_process = subprocess.Popen(['python3', 'scooter_stm_spawner.py', str(NUMBER_OF_SCOOTERS)])
+    charger_process = subprocess.Popen(['python3', 'charger_stm.py'])
     
     
     @app.route('/')
@@ -64,8 +72,6 @@ if __name__ == '__main__':
         else:
             return jsonify({'status': 'error', 'message': f'Invalid event: {event}'}), 400
         
-        
-
     @app.route('/generate_previous_bookings', methods=['POST'])
     def generate_previous_bookings():
         event = request.form.get('event')
@@ -80,8 +86,7 @@ if __name__ == '__main__':
         event = request.form.get('event')
         if event == 'button_clicked':
             server_manager_instance.stm_driver.send('abort', server_manager_instance.name)
-            flask_server_shutdown(scooter_process)
-            
+            flask_server_shutdown(scooter_process, charger_process)
         else:
             return jsonify({'status': 'error', 'message': f'Invalid event: {event}'}), 400
         
