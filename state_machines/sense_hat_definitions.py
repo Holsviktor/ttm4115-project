@@ -228,7 +228,7 @@ def animate_locking(sense):
         # Frame 1: Shackle fully open
         [
             O, O, O, O, O, O, O, O,
-            O, O, O, O, O, O, G, O,
+            O, O, O, O, O, O, R, O,
             O, O, R, O, O, O, O, O,
             O, O, R, O, O, O, O, O,
             O, O, R, O, O, O, O, R,
