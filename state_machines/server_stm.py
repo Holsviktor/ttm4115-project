@@ -68,8 +68,6 @@ class ServerLogic:
     def request_discount_info(self):
         self._logger.debug(f'{self.name} evaluates discount info.')
         # user can have discount, find out how much
-        
-        self._logger.debug(f'--------------->{abs(self.component.charger_x - self.component.final_coordinates[self.single_cancel_data[0]][0])} evaluates discount info.')
         if(abs(self.component.charger_x - self.component.final_coordinates[self.single_cancel_data[0]][0]) <= 5 
            and 
            abs(self.component.charger_y - self.component.final_coordinates[self.single_cancel_data[0]][1]) <= 5):
@@ -80,19 +78,18 @@ class ServerLogic:
             self.component.final_coordinates.pop(self.single_cancel_data[0])
         # user cannot have discount, finalize end of single booking  
         else:
+            # the user is not near the charging station, no discount available
+            self.component.discount[self.single_cancel_data[0]] = 0
             # remove stale coordinates
             self.component.final_coordinates.pop(self.single_cancel_data[0])
             self.component.stm_driver.send('finalize', self.name)
-            
-            
-        
         
     def finalize_end_single_booking_confirmation(self):  
         # log previous bookings in a "database"
         self._logger.debug(f'{self.name} tries to finalize end_single_booking.')
         # user can have discount, find out how much
         self._logger.debug(f'-------------->{self.single_cancel_data[0]} : {self.component.discount}') 
-        self._logger.debug(f'-------------->{self.single_cancel_data}') 
+        self._logger.debug(f'-------------->{self.single_cancel_data}')
         self.component.past_bookings[self.component.index] = (self.single_cancel_data[1], self.single_cancel_data[0], self.single_cancel_data[2], self.single_cancel_data[3], self.component.discount[self.single_cancel_data[0]])
         self.component.index += 1
         message = {'user_name' : self.single_cancel_data[1], 'msg': 'ack_end_book_single'}
