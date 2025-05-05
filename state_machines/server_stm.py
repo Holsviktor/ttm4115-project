@@ -65,7 +65,7 @@ class ServerLogic:
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, payload) 
         
         #self.single_cancel_queue.append([scooter_name, user_name, booking_started_at, booking_ended_at, discount])  
-    def get_discount_info(self):
+    def request_discount_info(self):
         self._logger.debug(f'{self.name} evaluates discount info.')
         # user can have discount, find out how much
         if(abs(self.component.charger_x - self.component.final_coordinates[self.single_cancel_data[0]][0]) <= 5 
