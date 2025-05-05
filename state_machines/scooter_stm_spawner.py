@@ -84,18 +84,22 @@ class ScooterLogic:
         
     # animation of scooter being asked about charging on sense hat
     def question_animation(self):
+        self._logger.debug(f'---------------> where is question animation?') 
+        self.sense.clear()
         self.sense.set_pixels(sense_hat_definitions.question_mark_pixels)
         time.sleep(2)
         self.sense.clear()
             
     # animation of scooter getting 5% discount on sense hat
     def five_animation(self):
+        self.sense.clear()
         self.sense.set_pixels(sense_hat_definitions.five_digit_pixels)
         time.sleep(2)
         self.sense.clear()
     
     # animation of scooter getting 2% discount on sense hat
     def two_animation(self):
+        self.sense.clear()
         self.sense.set_pixels(sense_hat_definitions.two_digit_pixels)
         time.sleep(2)
         self.sense.clear()
