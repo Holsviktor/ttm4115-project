@@ -319,7 +319,7 @@ class ScooterAppApp(App):
                     elif msg['msg'] == 'multiple_not_available':
                         print("Error...")
                         self.remove_selected(msg['scooter_names'])
-                    elif msg['msg'] == 'ack_end_book_single' or 'ack_end_book_multiple':
+                    elif msg['msg'] == ('ack_end_book_single' or 'ack_end_book_multiple'):
                         print("Ride Ended Checkout...")
                         self.C_STATE_CTRL[7] = 1
                 except:
