@@ -148,7 +148,6 @@ class ScooterLogic:
             self.status = {'name': self.name, 'x': self.x, 'y': self.y, 'state' : self.component.stm_driver._stms_by_id[self.name]._state}
             msg = self.status
             time.sleep(1)
-            self._logger.debug(f'{self.name} 5Hz')
             self.component.mqtt_client.publish(MQTT_TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
         
     def _handle_joystick_input(self):

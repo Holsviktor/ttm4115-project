@@ -50,7 +50,7 @@ class ServerLogic:
         await_discount_information = {'name': 'await_discount_information', 'book_single': 'defer', 'end_book_single' : 'defer'}
                 
         # adding stm to driver
-        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6, t7, t8 ], obj=self, states = [await_position_data, await_booking_data, await_discount_information]) 
+        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12 ], obj=self, states = [await_position_data, await_booking_data, await_discount_information]) 
         self.component.stm_driver.add_machine(self.stm) 
      
     
