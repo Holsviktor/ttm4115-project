@@ -290,6 +290,7 @@ class ServerManager:
                 self.stm_driver.send('ack_booking', self.name) 
                 
         if command == 'my_final_coordinates':
+            self._logger.debug(f'final coordinates ___________> {payload}')
             self.final_coordinates[payload.get('scooter_name')] = (payload.get('x'), payload.get('y'))
             self.stm_driver.send('my_final_coordinates', self.name) 
             
