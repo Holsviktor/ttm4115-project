@@ -69,8 +69,6 @@ class ChargerManager:
         self._logger.debug('MQTT connected to {}'.format(client)) 
 
     def on_message(self, client, userdata, msg): 
-        self._logger.debug('CHARGER Incoming message to topic {} : "{}" '.format(msg.topic, command) ) 
-
         try: 
             payload = json.loads(msg.payload.decode('utf-8')) 
         except Exception as err: 
@@ -78,6 +76,8 @@ class ChargerManager:
             return 
         
         command = payload.get('msg') 
+        
+        self._logger.debug('CHARGER Incoming message to topic {} : "{}" '.format(msg.topic, command) ) 
         
         # do stuff depending on what command you receive
 

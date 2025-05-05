@@ -327,6 +327,16 @@ class ServerManager:
             # each scooter can have the following data stored at the server: 
             # status (free/booked), username of the booker, timestamps of when scooter was booked 
             self.scooter_stats[f'scooter{i}'] = (STATUS_FREE, None, None)
+            
+            
+        # REMOVE ________________________  
+            if i == 8:
+                break
+            
+        self.scooter_stats['test_discount'] = (STATUS_FREE, None, None)   
+        
+        
+        #_______________________________
 
         # create a new MQTT client 
         self.mqtt_client = mqtt.Client() 
