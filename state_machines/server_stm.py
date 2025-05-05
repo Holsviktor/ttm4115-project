@@ -102,7 +102,9 @@ class ServerLogic:
         # remove inner stale data
         self.single_cancel_data = 'empty'
         self.component.final_coordinates.pop(self.single_cancel_data[0])
+        self._logger.debug(f'______________________> {self.single_cancel_data[0]} : {self.component.final_coordinates}')
         self.component.discount.pop(self.single_cancel_data[0])
+        self._logger.debug(f'______________________> {self.single_cancel_data[0]} : {self.component.discount}')
         
     def send_info_to_user(self):
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, self.component.payload) 
