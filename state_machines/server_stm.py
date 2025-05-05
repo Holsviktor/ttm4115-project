@@ -84,30 +84,28 @@ class ServerLogic:
     def finalize_end_single_booking_confirmation(self):  
         # log previous bookings in a "database"
         self.component.past_bookings[self.component.index] = (self.single_cancel_data[1], self.single_cancel_data[0], self.single_cancel_data[2], self.single_cancel_data[3], self.component.discount[self.single_cancel_data[0]])
-        self.index += 1
+        self.component.index += 1
         message = {'user_name' : self.single_cancel_data[1], 'msg': 'ack_end_book_single'}
         reply = json.dumps(message)        
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
-        # message = {'msg': 'stop_booking','scooter_name' : self.single_cancel_data[0]}
-        # payload = json.dumps(message)
-        # self.stm_driver.send('end_book_single', self.name)
-        # reset current stats data
+        # reset server internal scooter stats
         self.component.scooter_stats[self.single_cancel_data[0]] = (STATUS_FREE, None, None)
+        message = {'msg': 'stop_booking','scooter_name' : self.single_cancel_data[0]}
+        # send trip cancellation to scooter
+        payload = json.dumps(message)
+        self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, payload)
 
-        ### remove all used up stuff
+        # remove inner stale data
         self.single_cancel_data = 'empty'
         self.component.final_coordinates.pop(self.single_cancel_data[0])
         self.component.discount.pop(self.single_cancel_data[0])
-        
         
     def send_info_to_user(self):
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, self.component.payload) 
         self.component.payload = 'empty'
         
-        
     def timestamp_registered(self):
         self.single_booking_to_resend = 'empty'
-    
     
     def get_single_booking_confirmation(self):
         self._logger.debug(f'{self.name} requests scooters timestamp.')
