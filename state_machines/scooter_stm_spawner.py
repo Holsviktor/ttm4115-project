@@ -171,6 +171,7 @@ class ScooterLogic:
                                 self._logger.debug('SCOOTER: MOTION REGISTERED.')
                                 self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg))
                         else:
+                            self._logger.debug('SCOOTER: why are we here?.')
                             if event.direction == 'up':
                                 sense_hat_definitions._display_arrow('up', self.sense)
                                 self.x += 1
