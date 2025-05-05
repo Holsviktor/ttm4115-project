@@ -57,16 +57,18 @@ class ScooterLogic:
         
         # discount related transition
         t7 = {'source': 'in_use', 'target': 'in_use', 'trigger': 'give_final_coordinates', 'effect': 'send_final_coordinates'}
-        t8 = {'source': 'in_use', 'target': 'respond_to_charge_request', 'trigger': 'would_you_like_to_charge', 'effect': 'question_animation'} 
+        t8 = {'source': 'in_use', 'target': 'respond_to_charge_request', 'trigger': 'would_you_like_to_charge'} 
         t9 = {'source': 'respond_to_charge_request', 'target': 'in_use', 'trigger': '5', 'effect': 'five_animation'}
         t10 = {'source': 'respond_to_charge_request', 'target': 'in_use', 'trigger': '2', 'effect': 'two_animation'}
     
         
         # skip sending coordinates when scooter is booked, aka in_use 
         in_use = {'name': 'in_use', 'give_coordinates' : ''} 
+       
+        respond_to_charge_request = {'name': 'respond_to_charge_request', 'entry': 'question_animation'}
         
         
-        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10], obj=self, states = [in_use]) 
+        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10], obj=self, states = [in_use, respond_to_charge_request]) 
         self.component.stm_driver.add_machine(self.stm)
         
         # Threads used to avoid blocking main function
