@@ -17,6 +17,7 @@ MQTT_TOPIC_SCOOTER_POSITIONS = '10/scooter_positions'
 MQTT_TOPIC_SCOOTER_STATUS = '10/scooter_status'
 MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/server_request'
 MQTT_TOPIC_TO_SERVER = '10/to_server'
+MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER = '10/from_scooters_to_charger'
 
 class ScooterLogic: 
 
@@ -35,20 +36,36 @@ class ScooterLogic:
         self.enable_thread = True
         
         # scooter state machine transitions
+        
+        # initial transition
         t0 = {'source': 'initial', 'target': 'is_free'}
+        
+        # heatmap related transition
         t1 = {'source': 'is_free', 'target': 'is_free', 'trigger': 'give_coordinates', 'effect': 'send_coordinates'} 
+        
+        # shutdown related transitions
         t2 = {'source': 'is_free', 'target': 'final', 'trigger': 'abort', 'effect': 'say_goodbye'}
-        t3 = {'source': 'is_free', 'target': 'in_use', 'trigger': 'confirm_booking', 'effect' : 'unlock_animation; book_this'}
-        t4 = {'source': 'in_use', 'target': 'in_use', 'trigger': 'confirm_booking', 'effect' : 'book_this'}
-        t5 = {'source': 'in_use', 'target': 'final', 'trigger': 'abort', 'effect': 'say_goodbye'}
+        t3 = {'source': 'in_use', 'target': 'final', 'trigger': 'abort', 'effect': 'say_goodbye'}
+        
+        # booking related transitions
+        t4 = {'source': 'is_free', 'target': 'in_use', 'trigger': 'confirm_booking', 'effect' : 'unlock_animation; book_this'}
+        t5 = {'source': 'in_use', 'target': 'in_use', 'trigger': 'confirm_booking', 'effect' : 'book_this'}
+        
+        # canceling related transition
         t6 = {'source': 'in_use', 'target': 'is_free', 'trigger': 'stop_booking', 'effect' : 'end_trip; lock_animation'}
         
+        # discount related transition
+        t7 = {'source': 'in_use', 'target': 'in_use', 'trigger': 'give_final_coordinates', 'effect': 'send_final_coordinates'}
+        t8 = {'source': 'in_use', 'target': 'respond_to_charge_request', 'trigger': 'would_you_like_to_charge', 'effect': 'question_animation'} 
+        t9 = {'source': 'respond_to_charge_request', 'target': 'in_use', 'trigger': '5', 'effect': 'five_animation'}
+        t10 = {'source': 'respond_to_charge_request', 'target': 'in_use', 'trigger': '2', 'effect': 'two_animation'}
+    
         
-
         # skip sending coordinates when scooter is booked, aka in_use 
         in_use = {'name': 'in_use', 'give_coordinates' : ''} 
         
-        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6], obj=self, states = [in_use]) 
+        
+        self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10], obj=self, states = [in_use]) 
         self.component.stm_driver.add_machine(self.stm)
         
         # Threads used to avoid blocking main function
@@ -57,6 +74,31 @@ class ScooterLogic:
 
         self.thread_handle_joystick = Thread(target=self._handle_joystick_input)
         self.thread_handle_joystick.start()
+        
+    # send final scooter position to server when ending trip
+    def send_final_coordinates(self):
+        message = {'msg': 'my_final_coordinates','scooter_name' : self.name, 'x': self.x, 'y': self.y}
+        payload = json.dumps(message)
+        self.component.mqtt_client.publish(MQTT_TOPIC_TO_SERVER, payload) 
+        
+        
+    # animation of scooter being asked about charging on sense hat
+    def question_animation(self):
+        self.sense.set_pixels(sense_hat_definitions.question_mark_pixels)
+        time.sleep(2)
+        self.sense.clear()
+            
+    # animation of scooter getting 5% discount on sense hat
+    def five_animation(self):
+        self.sense.set_pixels(sense_hat_definitions.five_digit_pixels)
+        time.sleep(2)
+        self.sense.clear()
+    
+    # animation of scooter getting 2% discount on sense hat
+    def two_animation(self):
+        self.sense.set_pixels(sense_hat_definitions.two_digit_pixels)
+        time.sleep(2)
+        self.sense.clear()
                
     # animation of scooter locking on sense hat
     def lock_animation(self):
@@ -100,7 +142,7 @@ class ScooterLogic:
         self._logger.debug(f'{self.name} says : GOODBYE!') 
         
     # # sense hat functionality
-        
+    
     def Event_1Hz(self):
         while self.enable_thread:
             self.status = {'name': self.name, 'x': self.x, 'y': self.y, 'state' : self.component.stm_driver._stms_by_id[self.name]._state}
@@ -117,30 +159,34 @@ class ScooterLogic:
                 for event in self.sense.stick.get_events():
                     # x and y are adjusted to contain scooters in the grid
                     if event.action == 'pressed':
-                        if event.direction == 'up':
-                            sense_hat_definitions._display_arrow('up', self.sense)
-                            self.x += 1
-                            if self.x > 988:
-                                self.x = 988
-                        elif event.direction == 'down':
-                            sense_hat_definitions._display_arrow('down', self.sense)
-                            self.x -= 1
-                            if self.x < 0:
-                                self.x = 0
-                        elif event.direction == 'left':
-                            sense_hat_definitions._display_arrow('left', self.sense)
-                            self.y -=1
-                            if self.y < 0:
-                                self.y = 0
-                        elif event.direction == 'right':
-                            sense_hat_definitions._display_arrow('right', self.sense)
-                            self.y += 1
-                            if self.y > 661:
-                                self.y = 661
-                        elif event.direction == 'middle':
-                            sense_hat_definitions._display_arrow('stop', self.sense)
-
-
+                        if(self.component.stm_driver._stms_by_id[self.name]._state == 'respond_to_charge_request'):
+                            if event.direction == 'middle':
+                                # simulate setting scooter to charge
+                                sense_hat_definitions._display_arrow('stop', self.sense)
+                                msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                                self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg))
+                        else:
+                            if event.direction == 'up':
+                                sense_hat_definitions._display_arrow('up', self.sense)
+                                self.x += 1
+                                if self.x > 988:
+                                    self.x = 988
+                            elif event.direction == 'down':
+                                sense_hat_definitions._display_arrow('down', self.sense)
+                                self.x -= 1
+                                if self.x < 0:
+                                    self.x = 0
+                            elif event.direction == 'left':
+                                sense_hat_definitions._display_arrow('left', self.sense)
+                                self.y -=1
+                                if self.y < 0:
+                                    self.y = 0
+                            elif event.direction == 'right':
+                                sense_hat_definitions._display_arrow('right', self.sense)
+                                self.y += 1
+                                if self.y > 661:
+                                    self.y = 661
+                            
 class ScooterManager: 
 
     def on_connect(self, client, userdata, flags, rc): 
@@ -176,6 +222,19 @@ class ScooterManager:
             
         if command == 'stop_booking_confirmed':
             self.stm_driver.send('stop_booking_confirmed', payload.get('scooter_name'))
+            
+        if command == 'give_final_coordinates':
+            self.stm_driver.send('give_final_coordinates', payload.get('scooter_name'))
+            
+        if command == 'would_you_like_to_charge':
+            self.stm_driver.send('would_you_like_to_charge', payload.get('scooter_name'))
+            
+        if command == '5':
+            self.stm_driver.send('5', payload.get('scooter_name'))
+        
+        if command == '2':
+            self.stm_driver.send('2', payload.get('scooter_name'))
+
             
     def __init__(self, number_of_scooters_to_spawn): 
         
