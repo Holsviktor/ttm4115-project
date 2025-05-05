@@ -38,7 +38,7 @@ class ChargerLogic:
         self.component.stm_driver.add_machine(self.stm) 
         
     def say_goodbye(self):
-        self._logger.debug(f'{self.name} says GOODBYE!') 
+        self._logger.debug(f'{self.name} says : GOODBYE!') 
                 
     def send_message_to_scooter(self):
         # activate scooter charging response
@@ -69,7 +69,7 @@ class ChargerManager:
         self._logger.debug('MQTT connected to {}'.format(client)) 
 
     def on_message(self, client, userdata, msg): 
-        self._logger.debug('Incoming message to topic {}'.format(msg.topic)) 
+        self._logger.debug('CHARGER Incoming message to topic {} : "{}" '.format(msg.topic, command) ) 
 
         try: 
             payload = json.loads(msg.payload.decode('utf-8')) 
