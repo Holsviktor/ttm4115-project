@@ -147,14 +147,14 @@ class ScooterLogic:
         while self.enable_thread:
             self.status = {'name': self.name, 'x': self.x, 'y': self.y, 'state' : self.component.stm_driver._stms_by_id[self.name]._state}
             msg = self.status
-            time.sleep(5)
+            time.sleep(1)
             self._logger.debug(f'{self.name} 5Hz')
             self.component.mqtt_client.publish(MQTT_TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
         
     def _handle_joystick_input(self):
         while self.enable_thread:
             if self.component.stm_driver._stms_by_id[self.name]._state != 'in_use':
-                time.sleep(1)
+                time.sleep(0.1)
             else:
                 for event in self.sense.stick.get_events():
                     # x and y are adjusted to contain scooters in the grid
