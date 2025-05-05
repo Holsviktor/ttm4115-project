@@ -68,24 +68,29 @@ class ServerLogic:
     def request_discount_info(self):
         self._logger.debug(f'{self.name} evaluates discount info.')
         # user can have discount, find out how much
+        
+        self._logger.debug(f'--------------->{abs(self.component.charger_x - self.component.final_coordinates[self.single_cancel_data[0]][0])} evaluates discount info.')
         if(abs(self.component.charger_x - self.component.final_coordinates[self.single_cancel_data[0]][0]) <= 5 
            and 
            abs(self.component.charger_y - self.component.final_coordinates[self.single_cancel_data[0]][1]) <= 5):
             message = {'msg': 'ask_for_discount', 'scooter_name' : self.single_cancel_data[0], 'user_name': self.single_cancel_data[1]}
             payload = json.dumps(message)
             self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_CHARGER, payload) 
+            # remove stale coordinates
             self.component.final_coordinates.pop(self.single_cancel_data[0])
         # user cannot have discount, finalize end of single booking  
         else:
-            self.component.stm_driver.send('finalize', self.name)
+            # remove stale coordinates
             self.component.final_coordinates.pop(self.single_cancel_data[0])
+            self.component.stm_driver.send('finalize', self.name)
+            
+            
         
         
     def finalize_end_single_booking_confirmation(self):  
         # log previous bookings in a "database"
         self._logger.debug(f'{self.name} tries to finalize end_single_booking.')
         # user can have discount, find out how much
-        self._logger.debug(f'-------------->{self.single_cancel_data[0]} : {self.component.final_coordinates}') 
         self._logger.debug(f'-------------->{self.single_cancel_data[0]} : {self.component.discount}') 
         self._logger.debug(f'-------------->{self.single_cancel_data}') 
         self.component.past_bookings[self.component.index] = (self.single_cancel_data[1], self.single_cancel_data[0], self.single_cancel_data[2], self.single_cancel_data[3], self.component.discount[self.single_cancel_data[0]])
@@ -101,7 +106,6 @@ class ServerLogic:
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, payload)
 
         # remove inner stale data       
-        self.component.final_coordinates.pop(self.single_cancel_data[0])
         self.component.discount.pop(self.single_cancel_data[0])
         self.single_cancel_data = 'empty'
         
@@ -291,7 +295,6 @@ class ServerManager:
                 
         if command == 'my_final_coordinates':
             self.final_coordinates[payload.get('scooter_name')] = (payload.get('x'), payload.get('y'))
-            self._logger.debug(f'final coordinates ___________> {self.final_coordinates}')
             self.stm_driver.send('my_final_coordinates', self.name) 
             
         if command == '2' or command == '5':
