@@ -18,6 +18,8 @@ from random                 import random               # Needed for Testing
 from kivy.uix.popup         import Popup
 from kivy.uix.label         import Label
 from kivy.config            import Config
+from kivy.uix.boxlayout     import BoxLayout
+from kivy.uix.textinput     import TextInput
 
 def win_scale():
     if platform.system() != 'Windows':
@@ -100,6 +102,9 @@ class MQTT_MANAGER():
         
     def get_username(self):
         return self.username
+    
+    def set_username(self, username):
+        self.username = username
             
     def on_connect(self, client, userdata, flags, rc):
         print(f'MQTT Connected to {self.MQTT_BROKER} at port:{self.MQTT_PORT} and topic: {self.CURRENT_TOPIC}')
@@ -136,11 +141,8 @@ class ScooterAppApp(App):
 
         if self.C_STATE_CTRL[2]:
             for sc in selected_list:
-                if sc.marker_id not in self.C_SCOOTER_LIST and sc.marker_id not in self.C_SCOOTER_RESV:
-                    if self.C_STATE_CTRL[4]:
-                        self.C_SCOOTER_RESV.append(sc.marker_id)
-                    else:
-                        self.C_SCOOTER_LIST.append(sc.marker_id)
+                if sc.marker_id not in self.C_SCOOTER_LIST:
+                    self.C_SCOOTER_LIST.append(sc.marker_id)
         else:
             try:
                 if len(selected_list) > 1:
@@ -155,14 +157,9 @@ class ScooterAppApp(App):
                     if mk.marker_id != self.last_selected and self.last_selected != 0:
                         mk.selected = 0
 
-                if self.C_STATE_CTRL[4]:
-                    self.C_SCOOTER_RESV[0] = self.last_selected
-                else:
-                    self.C_SCOOTER_LIST[0] = self.last_selected
+                self.C_SCOOTER_LIST[0] = self.last_selected
             except:
-                print("KABOOM")
                 self.C_SCOOTER_LIST = [None]
-                self.C_SCOOTER_RESV = [None]
 
     # Main Function for creation and construciton of App
     #!SHOULD BE DONE
@@ -192,14 +189,6 @@ class ScooterAppApp(App):
             pos = (0*WINDOW_SCALING, 75*WINDOW_SCALING)
         )
 
-        self.btn_reserve = Button(
-            text = 'Reserve',
-            size_hint = (None, None),
-            size = (60*WINDOW_SCALING, 60*WINDOW_SCALING),
-            pos  = (310*WINDOW_SCALING, 45*WINDOW_SCALING),
-            on_press = self.btn_reserve_fnc
-        )
-
         self.btn_group_rent = Button(
             text = 'Group\n Rent',
             size_hint = (None, None),
@@ -222,14 +211,6 @@ class ScooterAppApp(App):
             size = (60*WINDOW_SCALING, 60*WINDOW_SCALING),
             pos = (30*WINDOW_SCALING, 595*WINDOW_SCALING),
             on_press = self.btn_profile_fnc
-        )
-
-        self.btn_charging_station = Button(
-            text = '   Show\nCharging\n Station',
-            size_hint=(None, None),
-            size = (60*WINDOW_SCALING, 60*WINDOW_SCALING),
-            pos = (310*WINDOW_SCALING, 595*WINDOW_SCALING),
-            on_press = self.btn_charging_station_fnc
         )
 
         self.btn_add_multiple = Button(
@@ -256,10 +237,8 @@ class ScooterAppApp(App):
 
         self.layout.add_widget(self.map_disp)
         self.layout.add_widget(self.cam_disp)
-        self.layout.add_widget(self.btn_reserve)
         self.layout.add_widget(self.btn_group_rent)
         self.layout.add_widget(self.btn_profile)        
-        self.layout.add_widget(self.btn_charging_station)
         self.layout.add_widget(self.btn_center)
         self.layout.add_widget(self.btn_add_multiple)
 
@@ -280,7 +259,7 @@ class ScooterAppApp(App):
         self.s_lon = 10.476090
 
         # Initialize MQTT
-        self.MQTT_Client        = MQTT_MANAGER(MQTT_TOPIC_TO_SERVER, input("GIVE USERNAME"))
+        self.MQTT_Client        = MQTT_MANAGER(MQTT_TOPIC_TO_SERVER, 'username')
         self.MQTT_ScooterStatus = MQTT_MANAGER(MQTT_TOPIC_SCOOTER_STATUS,'name')
 
         self.MQTT_Client.sub_topic(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS)
@@ -301,7 +280,6 @@ class ScooterAppApp(App):
         self.C_STATE_CTRL   = [0, 0, 0, 0, 0, 0, 0, 0]
         self.QR_MSG         = 0
         self.C_SCOOTER_LIST = [None]
-        self.C_SCOOTER_RESV = [None]
 
         # Internal Kivy "Threads"
         Clock.schedule_interval(self.state_machine_loop , 0.05)
@@ -310,6 +288,10 @@ class ScooterAppApp(App):
         Clock.schedule_interval(self.process_com        , 0.01)
         self.dims_clk = Clock.schedule_interval(self.init_dims , 0.05)
         self.clk_req  = Clock.schedule_interval(self.update_map, 10)
+        self.clk_map_disp_update = Clock.schedule_interval(self.update_display, 1/60)
+
+    def update_display(self, dt):
+        self.map_disp.center_on(self.map_disp.lat, self.map_disp.lon)
 
     def init_dims(self, dt):
         msg = self.MQTT_Client.get_msg()
@@ -357,10 +339,6 @@ class ScooterAppApp(App):
         for sc in sc_list:
             if sc in self.C_SCOOTER_LIST:
                 self.C_SCOOTER_LIST.remove(sc)
-                self.remove_from_selected(sc)
-
-            if sc in self.C_SCOOTER_RESV:
-                self.C_SCOOTER_RESV.remove(sc)
                 self.remove_from_selected(sc)
 
     def remove_from_selected(self, item):
@@ -446,9 +424,6 @@ class ScooterAppApp(App):
             return STATE_IDLE
         return STATE_SCAN
 
-    #TODO: ADD Switch name of the button to END                     | DONE
-    #TODO: ADD Find Closest Charging Station packet send to scooter | ?
-    #TODO: ADD End drive screen                                     | 
     def driv_app(self):
         self.cam_disp.opacity = 0
         self.btn_center.text = 'End'
@@ -468,10 +443,6 @@ class ScooterAppApp(App):
             return STATE_CHCK
         return STATE_DRIV
 
-    #TODO: ADD Basic Functionality for listing cost/distance etc.   | -> self.stop_ride()
-    #TODO: ADD Send update to server that scooter is free           | -> self.stop_ride()
-    #TODO: ADD Send update to server with new location              | -> self.stop_ride()
-    #TODO: REMOVE selected scooters from the list                   | DONE
     def chck_app(self):
         if self.C_STATE_CTRL[7]:
             popup = Popup(title='Ride Complete',
@@ -487,12 +458,10 @@ class ScooterAppApp(App):
     def update_icons(self, dt):
         for scooter in self.scooter_list:
             if scooter != None:
-                if scooter.scooter_state == 'is_free':
+                if scooter.scooter_state == 'is_free' or scooter.scooter_state == 'in_use':
                     scooter.opacity = 1 
                     if   scooter and scooter.marker_id in self.C_SCOOTER_LIST:
                         scooter.source = 'scooter_marker_scanned.PNG'
-                    elif scooter and scooter.marker_id in self.C_SCOOTER_RESV:
-                        scooter.source = 'scooter_marker_res.PNG'
                     else:
                         scooter.source = 'scooter_marker.PNG'
                 else:
@@ -502,14 +471,6 @@ class ScooterAppApp(App):
     # BUTTON FUNCTIONS
     def btn_center_fnc(self, instance):
         self.C_STATE_CTRL[0] = 1
-
-    def btn_reserve_fnc(self, instance):
-        print('Pressed Reserve...')
-        self.C_STATE_CTRL[4] = not self.C_STATE_CTRL[4]
-        if self.C_STATE_CTRL[4]:
-            self.btn_reserve.background_color = 'green'
-        else:
-            self.btn_reserve.background_color = 'gray'
 
     def btn_group_rent_fnc(self, instance):
         print("GROUP SELECT Pressed ...")
@@ -521,12 +482,25 @@ class ScooterAppApp(App):
 
     def btn_add_multiple_fnc(self, instance):
         print("Pressed +")
-
-    def btn_charging_station_fnc(self, instance):
-        print('Pressed Show Charging Station')
     
     def btn_profile_fnc(self, instance):
-        print('Pressed Profile')
+        self.popup = Popup(title='Profile Settings',
+                          content=BoxLayout(orientation = 'vertical', padding=5, spacing=5),
+                          size_hint=(None, None),
+                          size=(200,400)
+                    )
+        self.txt_in = TextInput(multiline=False, size_hint=(1,0.6), text=self.MQTT_Client.get_username())
+        self.btn_profile_cnf = Button(text='Confirm Changes', size_hint=(1,0.2))
+        self.btn_profile_cnf.bind(on_release=self.confirm_profile_name_update)
+        self.popup.content.add_widget(self.txt_in)
+        self.popup.content.add_widget(self.btn_profile_cnf)
+
+        self.popup.open()
+
+    def confirm_profile_name_update(self, instance):
+        self.MQTT_Client.set_username(self.txt_in.text)
+        self.popup.dismiss()
+        print(self.MQTT_Client.get_username())
 
     # OTHER APP FUNCTIONS
     def start_ride(self):
@@ -569,7 +543,6 @@ class ScooterAppApp(App):
             mqtt_msg_base = {'msg': 'end_book_single'   , 'scooter_name' : self.C_SCOOTER_LIST[-1]   , 'user_name': self.MQTT_Client.get_username()}
         
         self.C_SCOOTER_LIST = [None]
-        self.C_SCOOTER_RESV = [None]
 
         self.remove_selected_all()
 
