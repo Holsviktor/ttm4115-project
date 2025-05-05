@@ -452,6 +452,7 @@ class ScooterAppApp(App):
                     )
             popup.open()
             self.C_STATE_CTRL[0] = 0
+            self.C_STATE_CTRL[7] = 0
             return STATE_IDLE
         return STATE_CHCK
 
