@@ -33,8 +33,9 @@ class ScooterLogic:
         self.x = x 
         self.y = y
         self.ts = 'empty'
-        
-        self.enable_thread = True
+                
+        self.enable_thread_Event_1Hz = True
+        self.enable_thread_handle_joystick_input = True
         
         # scooter state machine transitions
         
@@ -138,7 +139,8 @@ class ScooterLogic:
         self.component.mqtt_client.publish(MQTT_TOPIC_TO_SERVER, payload) 
         
     def say_goodbye(self):
-        self.enable_thread = False
+        self.enable_thread_Event_1Hz = False
+        self.enable_thread_handle_joystick_input = False
         self.thread_1Hz.join()
         self.thread_handle_joystick.join()
         self.thread_handle_charge_response.join()
@@ -146,10 +148,12 @@ class ScooterLogic:
         
     # sense hat functionality
     
-    def handle_charge_response(self):        
+    def handle_charge_response(self):   
+        self.enable_thread_handle_joystick_input = False     
         answer = False
         while not answer:
             for event in self.sense.stick.get_events():
+                self._logger.debug(f'EVENT: ----> {event}')
                 if(event.direction == ('up' or 'down' or 'right' or 'left')):
                     answer = True
                     # simulate setting scooter to charge
@@ -158,20 +162,22 @@ class ScooterLogic:
                     self._logger.debug('SCOOTER: MOTION REGISTERED.')
                     self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg))                  
                     self.sense.clear()
-    
+        self.enable_thread_handle_joystick_input = True
+
     def Event_1Hz(self):
-        while self.enable_thread:
+        while self.enable_thread_Event_1Hz:
             self.status = {'name': self.name, 'x': self.x, 'y': self.y, 'state' : self.component.stm_driver._stms_by_id[self.name]._state}
             msg = self.status
             time.sleep(1)
             self.component.mqtt_client.publish(MQTT_TOPIC_SCOOTER_STATUS, payload=json.dumps(msg))
         
     def _handle_joystick_input(self):
-        while self.enable_thread:
+        while self.enable_thread_handle_joystick_input:
             if self.component.stm_driver._stms_by_id[self.name]._state != ('in_use'):
                 time.sleep(0.1)
             else:
                 for event in self.sense.stick.get_events():
+                    self._logger.debug(f'EVENT: ----> {event}')
                     # x and y are adjusted to contain scooters in the grid
                     if event.action == 'pressed':
                         if event.direction == 'up':
@@ -196,6 +202,7 @@ class ScooterLogic:
                                 self.y = 661
                         else:
                             sense_hat_definitions._display_arrow('stop', self.sense)
+                    self.sense.clear()
                             
 class ScooterManager: 
 
