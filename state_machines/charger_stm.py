@@ -43,8 +43,6 @@ class ChargerLogic:
     def send_message_to_scooter(self):
         # activate scooter charging response
         message = {'scooter_name' : self.component.scooter_name, 'msg': 'would_you_like_to_charge'}
-        
-        self._logger.debug(f'CHARGER sends: ---> {message}')
         payload = json.dumps(message)
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_CHARGER_TO_SCOOTERS, payload) 
         # ask user if they can place scooter in charge
@@ -90,7 +88,6 @@ class ChargerManager:
         if command == 'ask_for_discount':
             self.scooter_name = payload.get('scooter_name')
             self.user_name = payload.get('user_name')
-            self._logger.debug(f'CHARGER: asking for discount from------------>{self.scooter_name}') 
             self.stm_driver.send('ask_for_discount', self.name) 
         
         if command == 'abort':

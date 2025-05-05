@@ -86,10 +86,6 @@ class ServerLogic:
         
     def finalize_end_single_booking_confirmation(self):  
         # log previous bookings in a "database"
-        self._logger.debug(f'{self.name} tries to finalize end_single_booking.')
-        # user can have discount, find out how much
-        self._logger.debug(f'-------------->{self.single_cancel_data[0]} : {self.component.discount}') 
-        self._logger.debug(f'-------------->{self.single_cancel_data}')
         self.component.past_bookings[self.component.index] = (self.single_cancel_data[1], self.single_cancel_data[0], self.single_cancel_data[2], self.single_cancel_data[3], self.component.discount[self.single_cancel_data[0]])
         self.component.index += 1
         message = {'user_name' : self.single_cancel_data[1], 'msg': 'ack_end_book_single'}
@@ -114,7 +110,7 @@ class ServerLogic:
         self.single_booking_to_resend = 'empty'
     
     def get_single_booking_confirmation(self):
-        self._logger.debug(f'{self.name} requests scooters timestamp.')
+        # request booking timestamp from scooter, the first timestamp to arrive is accepted as start time
         if self.single_booking_to_resend == 'empty':
             scooter_name = self.component.single_booking_queue.pop(0)
             message = {'msg': 'confirm_booking','scooter_name' : scooter_name}
@@ -128,7 +124,7 @@ class ServerLogic:
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_CHARGER, '''{"msg": "abort"}''') 
         
     def request_positions(self):
-        self._logger.debug('Server requests coordinate data from scooters.')
+        self._logger.debug(f'{self.name} requests coordinate data from scooters.')
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, '''{"msg": "give_coordinates"}''') 
         
     def generate_heatmap(self):

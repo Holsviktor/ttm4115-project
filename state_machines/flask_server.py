@@ -76,7 +76,6 @@ if __name__ == '__main__':
     def generate_previous_bookings():
         event = request.form.get('event')
         if event == 'button_clicked':
-            print(list(server_manager_instance.past_bookings.items()))
             return jsonify({'status': 'success', 'triggered': event, 'past_bookings': list(server_manager_instance.past_bookings.items())})
         else:
             return jsonify({'status': 'error', 'message': f'Invalid event: {event}'}), 400
