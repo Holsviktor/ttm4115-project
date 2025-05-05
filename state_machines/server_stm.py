@@ -85,7 +85,9 @@ class ServerLogic:
         # log previous bookings in a "database"
         self._logger.debug(f'{self.name} tries to finalize end_single_booking.')
         # user can have discount, find out how much
-        # user can have discount, find out how much
+        self._logger.debug(f'-------------->{self.single_cancel_data[0]} : {self.component.final_coordinates}') 
+        self._logger.debug(f'-------------->{self.single_cancel_data[0]} : {self.component.discount}') 
+        self._logger.debug(f'-------------->{self.single_cancel_data}') 
         self.component.past_bookings[self.component.index] = (self.single_cancel_data[1], self.single_cancel_data[0], self.single_cancel_data[2], self.single_cancel_data[3], self.component.discount[self.single_cancel_data[0]])
         self.component.index += 1
         message = {'user_name' : self.single_cancel_data[1], 'msg': 'ack_end_book_single'}
@@ -98,8 +100,7 @@ class ServerLogic:
         payload = json.dumps(message)
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, payload)
 
-        # remove inner stale data    
-        self._logger.debug(f'-------------->{self.single_cancel_data[0]} : {self.component.final_coordinates}')    
+        # remove inner stale data       
         self.component.final_coordinates.pop(self.single_cancel_data[0])
         self.component.discount.pop(self.single_cancel_data[0])
         self.single_cancel_data = 'empty'
