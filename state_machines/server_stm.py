@@ -121,6 +121,7 @@ class ServerLogic:
     def say_goodbye(self):
         self._logger.debug(f'{self.name} says : GOODBYE!') 
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, '''{"msg": "abort"}''') 
+        self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_CHARGER, '''{"msg": "abort"}''') 
         
     def request_positions(self):
         self._logger.debug('Server requests coordinate data from scooters.')
