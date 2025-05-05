@@ -83,6 +83,10 @@ class ServerLogic:
         
     def finalize_end_single_booking_confirmation(self):  
         # log previous bookings in a "database"
+        self._logger.debug(f'{self.name} tries to finalize end_single_booking.')
+        self._logger.debug(f'-------------> {self.single_cancel_data[0]} : {self.component.discount}')
+        # user can have discount, find out how much
+        # user can have discount, find out how much
         self.component.past_bookings[self.component.index] = (self.single_cancel_data[1], self.single_cancel_data[0], self.single_cancel_data[2], self.single_cancel_data[3], self.component.discount[self.single_cancel_data[0]])
         self.component.index += 1
         message = {'user_name' : self.single_cancel_data[1], 'msg': 'ack_end_book_single'}
