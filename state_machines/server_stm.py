@@ -98,7 +98,8 @@ class ServerLogic:
         payload = json.dumps(message)
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, payload)
 
-        # remove inner stale data        
+        # remove inner stale data    
+        self._logger.debug(f'-------------->{self.single_cancel_data[0]} : {self.component.final_coordinates}')    
         self.component.final_coordinates.pop(self.single_cancel_data[0])
         self.component.discount.pop(self.single_cancel_data[0])
         self.single_cancel_data = 'empty'
