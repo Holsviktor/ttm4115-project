@@ -168,6 +168,7 @@ class ScooterLogic:
                                 # simulate setting scooter to charge
                                 sense_hat_definitions._display_arrow('stop', self.sense)
                                 msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                                self._logger.debug('SCOOTER: MOTION REGISTERED.')
                                 self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg))
                         else:
                             if event.direction == 'up':
