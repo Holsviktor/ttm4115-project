@@ -88,9 +88,9 @@ class ChargerManager:
             self.stm_driver.send('yes_charge', self.name) 
             
         if command == 'ask_for_discount':
-            self._logger.debug(f'CHARGER: asking for discount from------------>{self.scooter_name}') 
             self.scooter_name = payload.get('scooter_name')
             self.user_name = payload.get('user_name')
+            self._logger.debug(f'CHARGER: asking for discount from------------>{self.scooter_name}') 
             self.stm_driver.send('ask_for_discount', self.name) 
         
         if command == 'abort':

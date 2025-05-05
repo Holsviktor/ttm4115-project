@@ -18,6 +18,7 @@ MQTT_TOPIC_SCOOTER_STATUS = '10/scooter_status'
 MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS = '10/server_request'
 MQTT_TOPIC_TO_SERVER = '10/to_server'
 MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER = '10/from_scooters_to_charger'
+MQTT_TOPIC_FROM_CHARGER_TO_SCOOTERS = '10/from_charger_to_scooters'
 
 class ScooterLogic: 
 
@@ -259,7 +260,8 @@ class ScooterManager:
 
         # subscribe to proper topic(s) of your choice
         self.mqtt_client.subscribe(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS) 
-
+        self.mqtt_client.subscribe(MQTT_TOPIC_FROM_CHARGER_TO_SCOOTERS) 
+        
         # start the internal loop to process MQTT messages 
         self.mqtt_client.loop_start() 
 
