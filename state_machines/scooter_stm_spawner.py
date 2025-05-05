@@ -254,7 +254,7 @@ class ScooterManager:
         self._logger.debug('Connecting to MQTT broker {} at port {}'.format(MQTT_BROKER, MQTT_PORT)) 
         self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT) 
 
-        # subscribe to proper topic(s) of your choic 
+        # subscribe to proper topic(s) of your choice
         self.mqtt_client.subscribe(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS) 
 
         # start the internal loop to process MQTT messages 
@@ -272,13 +272,15 @@ class ScooterManager:
             random.seed = random.randint(0, 1337)
             ScooterLogic(f'scooter{i}', self, x = random.randint(0, 988), y = random.randint(0, 661)) 
             
-            #REMOVE:
+        #REMOVE:#____________________
             if i == 8:
                 break
             
             
-            
+        self.scooters.append('test_discount')  
+        self._logger.debug(f'Initializing Scooter STM with name "test_discount"') 
         ScooterLogic(f'test_discount', self, x = 510, y = 360)
+        #____________________
         
         
     def stop(self): 
