@@ -15,9 +15,7 @@ MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER = '10/from_scooters_to_charger'
 MQTT_TOPIC_FROM_USER_APPS_TO_CHARGER = '10/from_user_apps_to_charger'
 MQTT_TOPIC_TO_SERVER = '10/to_server'
 
-
 PIN_MOTION = 13
-
 
 class ChargerLogic: 
 
@@ -27,6 +25,7 @@ class ChargerLogic:
         self._logger = logging.getLogger(__name__) 
         self.name = name 
         self.component = component 
+        self.thread_is_stared = False
 
         #charger state machine transitions
         t0 = {'source': 'initial', 'target': 'idle'}
@@ -75,15 +74,16 @@ class ChargerLogic:
         #Input
         GPIO.setup(PIN_MOTION, GPIO.IN)
 
-        scooter_found = False
+        charge_confirmed = False
         
-        self._logger.debug('"charger1" searches for scooter movement...')
+        self._logger.debug('{self.name} waits for charge confirmation...')
         
-        while(not scooter_found):
+        while(not charge_confirmed):
             if GPIO.input(PIN_MOTION):
-                scooter_found = True
+                charge_confirmed = True
                     
-        GPIO.cleanup()
+        #GPIO.cleanup()
+        charge_confirmed = False
         
         # notify yourself that you found a scooter to trigger a transition 
         self.component.stm_driver.send('yes_charge', self.name)
@@ -91,8 +91,11 @@ class ChargerLogic:
         
     def start_measurement(self):
         # trying to make searching non-blocking
-        thread = Thread(target=self.measure_distance)
-        thread.start()
+        if(not self.thread_is_stared):
+            self.thread_is_stared = True
+            thread = Thread(target=self.measure_distance)
+            thread.start()
+            
                 
 
 class ChargerManager: 
@@ -178,7 +181,5 @@ ch.setLevel(debug_level)
 formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(message)s') 
 ch.setFormatter(formatter) 
 logger.addHandler(ch) 
-
-
  
 cm = ChargerManager() 
