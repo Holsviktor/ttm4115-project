@@ -2,6 +2,8 @@ import paho.mqtt.client as mqtt
 import stmpy 
 import logging 
 import json 
+from threading import Thread 
+import RPi.GPIO as GPIO
  
 MQTT_BROKER = 'mqtt20.iik.ntnu.no' 
 MQTT_PORT = 1883 
@@ -12,6 +14,9 @@ MQTT_TOPIC_FROM_CHARGER_TO_USER_APPS = '10/from_charger_to_user_apps'
 MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER = '10/from_scooters_to_charger'
 MQTT_TOPIC_FROM_USER_APPS_TO_CHARGER = '10/from_user_apps_to_charger'
 MQTT_TOPIC_TO_SERVER = '10/to_server'
+
+
+PIN_MOTION = 13
 
 
 class ChargerLogic: 
@@ -31,8 +36,7 @@ class ChargerLogic:
         t4 = {'source': 'idle', 'target': 'final', 'trigger':'abort', 'effect' : 'say_goodbye'}
         
         # entry actions
-        would_you_like_to_charge = {'name': 'would_you_like_to_charge', 'entry': 'start_timer("t0", "10000")', 'exit': 'stop_timer("t0")', 'ask_for_discount': 'defer'}
-        
+        would_you_like_to_charge = {'name': 'would_you_like_to_charge', 'entry': 'start_measurement; start_timer("t0", "20000")', 'exit': 'stop_timer("t0")', 'ask_for_discount': 'defer'}
 
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4], obj=self, states = [would_you_like_to_charge]) 
         self.component.stm_driver.add_machine(self.stm) 
@@ -61,6 +65,34 @@ class ChargerLogic:
         payload = json.dumps(message)
         self.component.mqtt_client.publish(MQTT_TOPIC_TO_SERVER, payload) 
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_CHARGER_TO_SCOOTERS, payload)
+        
+    def measure_distance(self):
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+
+        #Config Pins
+        #Input
+        GPIO.setup(PIN_MOTION, GPIO.IN)
+
+        scooter_found = False
+        
+        self._logger.debug('"charger1" searches for scooter movement...')
+        
+        while(not scooter_found):
+            if GPIO.input(PIN_MOTION):
+                scooter_found = True
+                    
+        GPIO.cleanup()
+        
+        # notify yourself that you found a scooter to trigger a transition 
+        self.component.stm_driver.send('yes_charge', self.name)
+        
+        
+    def start_measurement(self):
+        # trying to make searching non-blocking
+        thread = Thread(target=self.measure_distance)
+        thread.start()
                 
 
 class ChargerManager: 

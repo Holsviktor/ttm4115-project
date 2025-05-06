@@ -211,29 +211,29 @@ class ScooterLogic:
                                     self.y += 1
                                     if self.y > 661:
                                         self.y = 661
-                        elif(self.component.stm_driver._stms_by_id[self.name]._state == ('respond_to_charge_request')):
-                            self._logger.debug(f'EVENT Enabled: ----> {event}')
-                            # x and y are adjusted to contain scooters in the grid
-                            if event.action == 'pressed':
-                                if event.direction == 'up':
-                                    msg = {'msg': 'yes_charge', 'scooter_name': self.name}
-                                    self._logger.debug('SCOOTER: MOTION REGISTERED.')
-                                    self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
+                        # else:
+                        #     self._logger.debug(f'EVENT Enabled: ----> {event}')
+                        #     # x and y are adjusted to contain scooters in the grid
+                        #     if event.action == 'pressed':
+                        #         if event.direction == 'up':
+                        #             msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                        #             self._logger.debug('SCOOTER: MOTION REGISTERED.')
+                        #             self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
 
-                                elif event.direction == 'down':
-                                    msg = {'msg': 'yes_charge', 'scooter_name': self.name}
-                                    self._logger.debug('SCOOTER: MOTION REGISTERED.')
-                                    self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
+                        #         elif event.direction == 'down':
+                        #             msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                        #             self._logger.debug('SCOOTER: MOTION REGISTERED.')
+                        #             self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
 
-                                elif event.direction == 'left':
-                                    msg = {'msg': 'yes_charge', 'scooter_name': self.name}
-                                    self._logger.debug('SCOOTER: MOTION REGISTERED.')
-                                    self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
+                        #         elif event.direction == 'left':
+                        #             msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                        #             self._logger.debug('SCOOTER: MOTION REGISTERED.')
+                        #             self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
     
-                                elif event.direction == 'right':
-                                    msg = {'msg': 'yes_charge', 'scooter_name': self.name}
-                                    self._logger.debug('SCOOTER: MOTION REGISTERED.')
-                                    self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
+                        #         elif event.direction == 'right':
+                        #             msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                        #             self._logger.debug('SCOOTER: MOTION REGISTERED.')
+                        #             self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
  
 
                     # self.sense.clear()
