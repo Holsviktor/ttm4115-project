@@ -335,7 +335,7 @@ class ServerManager:
             if i == 8:
                 break
             
-        self.scooter_stats['test_discount'] = (STATUS_FREE, None, None)   
+        self.scooter_stats['scooter9'] = (STATUS_FREE, None, None)   
         
         
         #_______________________________

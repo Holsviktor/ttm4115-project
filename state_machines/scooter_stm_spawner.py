@@ -361,9 +361,9 @@ class ScooterManager:
                 break
             
             
-        self.scooters.append('test_discount')  
-        self._logger.debug(f'Initializing Scooter STM with name "test_discount"') 
-        ScooterLogic(f'test_discount', self, x = 510, y = 360)
+        self.scooters.append('scooter9')  
+        self._logger.debug(f'Initializing Scooter STM with name "scooter9"') 
+        ScooterLogic(f'scooter9', self, x = 510, y = 360)
         #____________________
         
         
