@@ -83,10 +83,13 @@ class ScooterLogic:
         self.thread_handle_charge_response = Thread(target=self.handle_charge_response)
         self.thread_handle_charge_response.start()
         
+        
     def contemplate_charging(self):
         self.sense.set_pixels(sense_hat_definitions.question_mark_pixels)
+        self.enable_thread_handle_joystick_input = False
+        self.enable_thread_charge_response = True
         
-        
+            
     # send final scooter position to server when ending trip
     def send_final_coordinates(self):
         message = {'msg': 'my_final_coordinates','scooter_name' : self.name, 'x': self.x, 'y': self.y}
@@ -151,9 +154,7 @@ class ScooterLogic:
         
     # sense hat functionality
     
-    def handle_charge_response(self):  
-        self.enable_thread_handle_joystick_input = False
-        self.enable_thread_charge_response = True 
+    def handle_charge_response(self):   
         while self.enable_thread_charge_response:
             time.sleep(0.1)
             for event in self.sense.stick.get_events():
