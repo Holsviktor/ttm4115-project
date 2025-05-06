@@ -81,7 +81,7 @@ class ScooterLogic:
         self.thread_handle_joystick.start()
         
         self.thread_handle_charge_response = Thread(target=self.handle_charge_response)
-        self.thread_handle_charge_response.start()
+        # self.thread_handle_charge_response.start()
         
         
     def contemplate_charging(self):
@@ -147,7 +147,7 @@ class ScooterLogic:
         self.enable_thread_charge_response = False
         self.thread_1Hz.join()
         self.thread_handle_joystick.join()
-        self.thread_handle_charge_response.join()
+        # self.thread_handle_charge_response.join()
         self._logger.debug(f'{self.name} says : GOODBYE!') 
         
     # sense hat functionality
@@ -178,11 +178,11 @@ class ScooterLogic:
         
     def _handle_joystick_input(self):
         while self.enable_thread_handle_joystick_input:
-            if self.component.stm_driver._stms_by_id[self.name]._state != ('in_use'):
+            if self.component.stm_driver._stms_by_id[self.name]._state != ('in_use') and self.component.stm_driver._stms_by_id[self.name]._state != ('respond_to_charge_request'):
                 time.sleep(0.1)
-            else:
+            elif self.component.stm_driver._stms_by_id[self.name]._state == ('in_use'):
                 for event in self.sense.stick.get_events():
-                    self._logger.debug(f'EVENT: ----> {event}')
+                    self._logger.debug(f'EVENT Enabled: ----> {event}')
                     # x and y are adjusted to contain scooters in the grid
                     if event.action == 'pressed':
                         if event.direction == 'up':
@@ -208,6 +208,16 @@ class ScooterLogic:
                         else:
                             sense_hat_definitions._display_arrow('stop', self.sense)
                     self.sense.clear()
+            elif self.component.stm_driver._stms_by_id[self.name]._state == ('respond_to_charge_request'):
+                for event in self.sense.stick.get_events():
+                    self._logger.debug(f'EVENT Charge: ----> {event}')
+                    if(event.direction == ('up' or 'down' or 'right' or 'left' or 'middle')):
+                        # simulate setting scooter to charge
+                        sense_hat_definitions._display_arrow('stop', self.sense)
+                        msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                        self._logger.debug('SCOOTER: MOTION REGISTERED.')
+                        self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg))               
+                        self.sense.clear()
                             
 class ScooterManager: 
 
