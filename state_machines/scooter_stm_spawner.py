@@ -178,10 +178,11 @@ class ScooterLogic:
         
     def _handle_joystick_input(self):
         while self.enable_thread_handle_joystick_input:
-            if self.component.stm_driver._stms_by_id[self.name]._state != ('in_use'):
+            if self.component.stm_driver._stms_by_id[self.name]._state != ('in_use') or self.component.stm_driver._stms_by_id[self.name]._state != ('respond_to_charge_request'):
             # #and self.component.stm_driver._stms_by_id[self.name]._state != ('respond_to_charge_request'):
                 time.sleep(0.1)
             # elif self.component.stm_driver._stms_by_id[self.name]._state == ('in_use'):
+            else:
                 for event in self.sense.stick.get_events():
                     self._logger.debug(f'EVENT Enabled: ----> {event}')
                     # x and y are adjusted to contain scooters in the grid
@@ -206,8 +207,11 @@ class ScooterLogic:
                             self.y += 1
                             if self.y > 661:
                                 self.y = 661
-                        else:
+                        elif event.direction == 'middle':
                             sense_hat_definitions._display_arrow('stop', self.sense)
+                            msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                            self._logger.debug('SCOOTER: MOTION REGISTERED.')
+                            self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
                     # self.sense.clear()
             # elif self.component.stm_driver._stms_by_id[self.name]._state == ('respond_to_charge_request'):
             #     for event in self.sense.stick.get_events():
