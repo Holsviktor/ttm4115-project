@@ -159,7 +159,7 @@ class ScooterLogic:
             else:
                 for event in self.sense.stick.get_events():
                     self._logger.debug(f'EVENT: ----> {event}')
-                    if(event.direction == ('up' or 'down' or 'right' or 'left')):
+                    if(event.direction == ('up' or 'down' or 'right' or 'left' or 'middle')):
                         # simulate setting scooter to charge
                         sense_hat_definitions._display_arrow('stop', self.sense)
                         msg = {'msg': 'yes_charge', 'scooter_name': self.name}
