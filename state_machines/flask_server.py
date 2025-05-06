@@ -41,7 +41,7 @@ if __name__ == '__main__':
     
     # other state machines need to spawn as independent processes
     scooter_process = subprocess.Popen(['python3', 'scooter_stm_spawner.py', str(NUMBER_OF_SCOOTERS)])
-    charger_process = subprocess.Popen(['python3', 'charger_stm.py'])
+    #charger_process = subprocess.Popen(['python3', 'charger_stm.py'])
     
     
     @app.route('/')
