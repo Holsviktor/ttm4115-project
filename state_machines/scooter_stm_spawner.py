@@ -155,10 +155,10 @@ class ScooterLogic:
         self.enable_thread_handle_joystick_input = False
         self.enable_thread_charge_response = True 
         while self.enable_thread_charge_response:
+            time.sleep(0.1)
             for event in self.sense.stick.get_events():
                 self._logger.debug(f'EVENT: ----> {event}')
                 if(event.direction == ('up' or 'down' or 'right' or 'left')):
-                    answer = True
                     # simulate setting scooter to charge
                     sense_hat_definitions._display_arrow('stop', self.sense)
                     msg = {'msg': 'yes_charge', 'scooter_name': self.name}
