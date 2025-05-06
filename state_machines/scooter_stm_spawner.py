@@ -36,6 +36,7 @@ class ScooterLogic:
                 
         self.enable_thread_Event_1Hz = True
         self.enable_thread_handle_joystick_input = True
+        self.enable_thread_charge_response = False
         
         # scooter state machine transitions
         
@@ -80,10 +81,11 @@ class ScooterLogic:
         self.thread_handle_joystick.start()
         
         self.thread_handle_charge_response = Thread(target=self.handle_charge_response)
+        self.thread_handle_charge_response.start()
         
     def contemplate_charging(self):
         self.sense.set_pixels(sense_hat_definitions.question_mark_pixels)
-        self.thread_handle_charge_response.start()
+        
         
     # send final scooter position to server when ending trip
     def send_final_coordinates(self):
@@ -141,6 +143,7 @@ class ScooterLogic:
     def say_goodbye(self):
         self.enable_thread_Event_1Hz = False
         self.enable_thread_handle_joystick_input = False
+        self.enable_thread_charge_response = False
         self.thread_1Hz.join()
         self.thread_handle_joystick.join()
         self.thread_handle_charge_response.join()
@@ -148,10 +151,10 @@ class ScooterLogic:
         
     # sense hat functionality
     
-    def handle_charge_response(self):   
-        self.enable_thread_handle_joystick_input = False     
-        answer = False
-        while not answer:
+    def handle_charge_response(self):  
+        self.enable_thread_handle_joystick_input = False
+        self.enable_thread_charge_response = True 
+        while self.enable_thread_charge_response:
             for event in self.sense.stick.get_events():
                 self._logger.debug(f'EVENT: ----> {event}')
                 if(event.direction == ('up' or 'down' or 'right' or 'left')):
@@ -160,9 +163,11 @@ class ScooterLogic:
                     sense_hat_definitions._display_arrow('stop', self.sense)
                     msg = {'msg': 'yes_charge', 'scooter_name': self.name}
                     self._logger.debug('SCOOTER: MOTION REGISTERED.')
-                    self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg))                  
+                    self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
+                    self.enable_thread_charge_response = False    
+                    self.enable_thread_handle_joystick_input = True              
                     self.sense.clear()
-        self.enable_thread_handle_joystick_input = True
+        
 
     def Event_1Hz(self):
         while self.enable_thread_Event_1Hz:
