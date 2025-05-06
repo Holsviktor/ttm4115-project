@@ -36,7 +36,7 @@ class ScooterLogic:
                 
         self.enable_thread_Event_1Hz = True
         self.enable_thread_handle_joystick_input = True
-        self.enable_thread_charge_response = False
+        self.enable_thread_charge_response = True
         
         # scooter state machine transitions
         
@@ -86,8 +86,6 @@ class ScooterLogic:
         
     def contemplate_charging(self):
         self.sense.set_pixels(sense_hat_definitions.question_mark_pixels)
-        self.enable_thread_handle_joystick_input = False
-        self.enable_thread_charge_response = True
         
             
     # send final scooter position to server when ending trip
@@ -156,18 +154,18 @@ class ScooterLogic:
     
     def handle_charge_response(self):   
         while self.enable_thread_charge_response:
-            time.sleep(0.1)
-            for event in self.sense.stick.get_events():
-                self._logger.debug(f'EVENT: ----> {event}')
-                if(event.direction == ('up' or 'down' or 'right' or 'left')):
-                    # simulate setting scooter to charge
-                    sense_hat_definitions._display_arrow('stop', self.sense)
-                    msg = {'msg': 'yes_charge', 'scooter_name': self.name}
-                    self._logger.debug('SCOOTER: MOTION REGISTERED.')
-                    self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg)) 
-                    self.enable_thread_charge_response = False    
-                    self.enable_thread_handle_joystick_input = True              
-                    self.sense.clear()
+            if self.component.stm_driver._stms_by_id[self.name]._state != ('respond_to_charge_request'):
+                time.sleep(0.1)
+            else:
+                for event in self.sense.stick.get_events():
+                    self._logger.debug(f'EVENT: ----> {event}')
+                    if(event.direction == ('up' or 'down' or 'right' or 'left')):
+                        # simulate setting scooter to charge
+                        sense_hat_definitions._display_arrow('stop', self.sense)
+                        msg = {'msg': 'yes_charge', 'scooter_name': self.name}
+                        self._logger.debug('SCOOTER: MOTION REGISTERED.')
+                        self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SCOOTERS_TO_CHARGER, payload=json.dumps(msg))               
+                        self.sense.clear()
         
 
     def Event_1Hz(self):
