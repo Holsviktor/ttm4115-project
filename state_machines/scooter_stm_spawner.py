@@ -211,6 +211,7 @@ class ScooterLogic:
             elif self.component.stm_driver._stms_by_id[self.name]._state == ('respond_to_charge_request'):
                 for event in self.sense.stick.get_events():
                     self._logger.debug(f'EVENT Charge: ----> {event}')
+                    self._logger.debug(f'EVENT Charge DIRECTION: ----> {event.direction}')
                     if(event.direction == ('up' or 'down' or 'right' or 'left' or 'middle')):
                         # simulate setting scooter to charge
                         sense_hat_definitions._display_arrow('stop', self.sense)
