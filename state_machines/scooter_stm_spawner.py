@@ -170,6 +170,7 @@ class ScooterLogic:
 
     def Event_1Hz(self):
         while self.enable_thread_Event_1Hz:
+            self._logger.debug(f"MY STATE: --->{self.component.stm_driver._stms_by_id[self.name]._state}")
             self.status = {'name': self.name, 'x': self.x, 'y': self.y, 'state' : self.component.stm_driver._stms_by_id[self.name]._state}
             msg = self.status
             time.sleep(1)
