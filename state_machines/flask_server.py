@@ -6,6 +6,7 @@ import subprocess
 
 NUMBER_OF_SCOOTERS = 10
 
+# graceful shutdown of Flask server and server and scooters stms
 def flask_server_shutdown(scooter_process):
         time.sleep(5)
         print("Flask server says: shutting down scooter stm process.")
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     
     @app.route('/')
     def index():
-        # html files needs to be placed in a folder called "templates", Flask looks there by default to find the requested template
+        # html files needs to be placed in a folder called 'templates', Flask looks there by default to find the requested template
         return render_template('system_manager_app.html')
 
     @app.route('/generate_heatmap', methods=['POST'])
