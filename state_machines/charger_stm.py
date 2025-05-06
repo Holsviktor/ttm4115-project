@@ -27,27 +27,35 @@ class ChargerLogic:
         self.component = component 
         self.thread_is_stared = False
 
-        #charger state machine transitions
+        # charger transitions
+        
+        # initial transition
         t0 = {'source': 'initial', 'target': 'idle'}
+        
+        # discount related transitions
         t1 = {'source': 'idle', 'target': 'would_you_like_to_charge', 'trigger': 'ask_for_discount', 'effect': 'send_message_to_scooter'} 
         t2 = {'source': 'would_you_like_to_charge', 'target': 'idle', 'trigger': 't0', 'effect': 'give_discount_2'} 
         t3 = {'source': 'would_you_like_to_charge', 'target': 'idle', 'trigger': 'yes_charge', 'effect': 'give_discount_5'} 
+        
+        # shutdown related transition
         t4 = {'source': 'idle', 'target': 'final', 'trigger':'abort', 'effect' : 'say_goodbye'}
         
         # entry actions
-        would_you_like_to_charge = {'name': 'would_you_like_to_charge', 'entry': 'start_measurement; start_timer("t0", "20000")', 'exit': 'stop_timer("t0")', 'ask_for_discount': 'defer'}
+        would_you_like_to_charge = {'name': 'would_you_like_to_charge', 'entry': 'start_measurement; start_timer("t0", "10000")', 'exit': 'stop_timer("t0")', 'ask_for_discount': 'defer'}
 
         self.stm = stmpy.Machine(name=name, transitions = [t0, t1, t2, t3, t4], obj=self, states = [would_you_like_to_charge]) 
         self.component.stm_driver.add_machine(self.stm) 
         
     def say_goodbye(self):
         self._logger.debug(f'{self.name} says : GOODBYE!') 
+        GPIO.cleanup()
                 
     def send_message_to_scooter(self):
         # activate scooter charging response
         message = {'scooter_name' : self.component.scooter_name, 'msg': 'would_you_like_to_charge'}
         payload = json.dumps(message)
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_CHARGER_TO_SCOOTERS, payload) 
+        
         # ask user if they can place scooter in charge
         message = {'user_name' : self.component.user_name, 'msg': 'would_you_like_to_charge'}
         payload = json.dumps(message)
@@ -64,7 +72,8 @@ class ChargerLogic:
         payload = json.dumps(message)
         self.component.mqtt_client.publish(MQTT_TOPIC_TO_SERVER, payload) 
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_CHARGER_TO_SCOOTERS, payload)
-        
+    
+    # motion sensor functionality to simulate scooter being set in charge
     def measure_distance(self):
 
         GPIO.setmode(GPIO.BCM)
@@ -82,10 +91,9 @@ class ChargerLogic:
             if GPIO.input(PIN_MOTION):
                 charge_confirmed = True
                     
-        #GPIO.cleanup()
         charge_confirmed = False
         
-        # notify yourself that you found a scooter to trigger a transition 
+        # notify yourself that scooter was put to charging to trigger a 5% discount transition
         self.component.stm_driver.send('yes_charge', self.name)
         
         
@@ -96,8 +104,6 @@ class ChargerLogic:
             thread = Thread(target=self.measure_distance)
             thread.start()
             
-                
-
 class ChargerManager: 
 
     def on_connect(self, client, userdata, flags, rc): 
@@ -165,13 +171,11 @@ class ChargerManager:
         self._logger.debug(f'Initializing Charger STM with name {self.name}') 
         ChargerLogic(self.name, self)
         
-        
     def stop(self): 
         # stop the MQTT client 
         self.mqtt_client.loop_stop() 
         # stop the state machine Driver 
         self.stm_driver.stop() 
-
 
 debug_level = logging.DEBUG 
 logger = logging.getLogger(__name__) 

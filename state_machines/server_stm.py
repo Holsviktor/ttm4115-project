@@ -29,16 +29,27 @@ class ServerLogic:
         self.single_cancel_data = 'empty'
 
         # server transitions
+        
+        # initial transition
         t0 = {'source': 'initial', 'target': 'idle'}
+        
+        # heatmap related transitions
         t1 = {'source': 'idle', 'target': 'await_position_data', 'trigger': 'get_positional_data', 'effect': 'request_positions'} 
         t2 = {'source': 'await_position_data', 'target': 'idle', 'trigger': 't0', 'effect': 'generate_heatmap'} 
+        
+        # shutdown related transition
         t3 = {'source': 'idle', 'target': 'final', 'trigger': 'abort', 'effect': 'say_goodbye'}
+        
+        # booking related transitions
         t4 = {'source': 'idle', 'target':'await_booking_data', 'trigger': 'book_single', 'effect': 'get_single_booking_confirmation'}
         t5 = {'source': 'await_booking_data', 'target':'await_booking_data', 'trigger': 't1', 'effect': 'get_single_booking_confirmation'}
         t6 = {'source': 'await_booking_data', 'target':'idle', 'trigger': 'ack_booking', 'effect': 'timestamp_registered'}
-        t7 = {'source': 'idle', 'target': 'idle', 'trigger': 'scooterlist_request', 'effect': 'send_info_to_user'}
-        t8 = {'source': 'idle', 'target': 'await_discount_information', 'trigger': 'end_book_single', 'effect': 'end_single_booking_confirmation'}
         
+        # user interaction related transitions
+        t7 = {'source': 'idle', 'target': 'idle', 'trigger': 'scooterlist_request', 'effect': 'send_info_to_user'}
+        
+        # discount  related transitions
+        t8 = {'source': 'idle', 'target': 'await_discount_information', 'trigger': 'end_book_single', 'effect': 'end_single_booking_confirmation'}
         t9 = {'source': 'await_discount_information', 'target': 'await_discount_information', 'trigger': 'get_final_coordinates', 'effect':'request_final_coordinates'}
         t10 = {'source': 'await_discount_information', 'target': 'await_discount_information', 'trigger': 'my_final_coordinates', 'effect': 'request_discount_info'}
         t11 = {'source': 'await_discount_information', 'target': 'idle', 'trigger': 'finalize', 'effect': 'finalize_end_single_booking_confirmation'}
@@ -64,7 +75,6 @@ class ServerLogic:
         payload = json.dumps(message)
         self.component.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_SCOOTERS, payload) 
         
-        #self.single_cancel_queue.append([scooter_name, user_name, booking_started_at, booking_ended_at, discount])  
     def request_discount_info(self):
         self._logger.debug(f'{self.name} evaluates discount info.')
         # user can have discount, find out how much
@@ -217,10 +227,6 @@ class ServerManager:
                 reply = json.dumps(message)        
                 self.mqtt_client.publish(MQTT_TOPIC_FROM_SERVER_TO_USER_APPS, reply)
                     
-        #TODO discount
-
-        #TODO cancel  multiple ride
-        #{'msg': 'end_book_multiple', 'user_name' : username, 'scooter_name': scooter_name}
         if command == 'end_book_multiple':
             scooter_names = payload.get('scooter_names')
             user_name = payload.get('user_name')
@@ -307,7 +313,7 @@ class ServerManager:
         self.charger_y = 330
         # server name
         self.name = 'central_server'
-        # 
+        # heatmap data
         self.positional_data = {}
         # 'database' dictionary 
         self.past_bookings = {}
@@ -329,16 +335,6 @@ class ServerManager:
             # each scooter can have the following data stored at the server: 
             # status (free/booked), username of the booker, timestamps of when scooter was booked 
             self.scooter_stats[f'scooter{i}'] = (STATUS_FREE, None, None)
-            
-            
-        # REMOVE ________________________  
-            if i == 8:
-                break
-            
-        self.scooter_stats['scooter9'] = (STATUS_FREE, None, None)   
-        
-        
-        #_______________________________
 
         # create a new MQTT client 
         self.mqtt_client = mqtt.Client() 
