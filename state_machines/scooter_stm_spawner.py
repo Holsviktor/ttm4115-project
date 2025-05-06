@@ -178,7 +178,7 @@ class ScooterLogic:
         
     def _handle_joystick_input(self):
         while self.enable_thread_handle_joystick_input:
-            if self.component.stm_driver._stms_by_id[self.name]._state != ('in_use') or self.component.stm_driver._stms_by_id[self.name]._state != ('respond_to_charge_request'):
+            if self.component.stm_driver._stms_by_id[self.name]._state != ('in_use'):
             # #and self.component.stm_driver._stms_by_id[self.name]._state != ('respond_to_charge_request'):
                 time.sleep(0.1)
             # elif self.component.stm_driver._stms_by_id[self.name]._state == ('in_use'):
